@@ -10,10 +10,10 @@ namespace NeuralNets
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             Random random = new Random();
-            Func<float[], float[], float>[] errorFuncs = new Func<float[], float[], float>[] { (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += Math.Abs(a[i] - b[i]); } return sumError / a.Length; }, (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += (a[i] - b[i]) * (a[i] - b[i]); } return sumError / a.Length; }, (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += (a[i] - b[i]) * (a[i] - b[i]); } return (float)Math.Sqrt(sumError / a.Length); } };
+            var errorFuncs = new Func<float[], float[], float>[] { (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += Math.Abs(a[i] - b[i]); } return sumError / a.Length; }, (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += (a[i] - b[i]) * (a[i] - b[i]); } return sumError / a.Length; }, (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += (a[i] - b[i]) * (a[i] - b[i]); } return (float)Math.Sqrt(sumError / a.Length); } };
             ConsoleColor startingColor = Console.ForegroundColor;
             string input = CHelper.RequestInput("What is the target string?", true, ConsoleColor.DarkYellow, startingColor);
             var lossFunc = errorFuncs[CHelper.SelectorMenu("What is the error function?", new string[] { "\tMean Absolute Error", "\tMean Squared Error", "\tRoot Mean Squared Error" }, true, ConsoleColor.DarkYellow, startingColor, ConsoleColor.Magenta)];
@@ -24,19 +24,30 @@ namespace NeuralNets
             for (int i = 0; i < input.Length; i++)
             {
                 newFandangledRandomString[i] = random.Next(1, 256);
-                characterVals[i] = (int)input[i];
+                characterVals[i] = input[i];
             }
-            
-            
-            while (true)
+
+            bool done = false;
+            int steps = 0;
+            while (!done)
             {
+                for(int i = 0; i < 50; i++)
+                {
+                    steps++;
+                    if(UpdateStr() == 0)
+                    {
+                        done = true;
+                        break;
+                    }
+                }
                 Console.Clear();
                 Console.ForegroundColor = startingColor;
-                float error = lossFunc(characterVals, newFandangledRandomString);
-                for(int i = 0; i < characterVals.Length; i++)
+                
+                for (int i = 0; i < characterVals.Length; i++)
                 {
                     Console.Write((char)newFandangledRandomString[i]);
                 }
+                
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.Write(" => ");
                 Console.ForegroundColor = startingColor;
@@ -45,9 +56,30 @@ namespace NeuralNets
                     Console.Write((char)characterVals[i]);
                 }
 
-                System.Threading.Thread.Sleep(20);
+                await Task.Delay(20);
+            }
+            Console.WriteLine();
+            Console.WriteLine($"Done! Yay! Only took {steps} iterations!");
+            Console.ReadKey();
+
+            float UpdateStr()
+            {
+                float error = lossFunc(characterVals, newFandangledRandomString);
+                int indexToChange = random.Next(0, characterVals.Length);
+                int amountToAdd = random.Next(0, 2) * 2 - 1;
+                newFandangledRandomString[indexToChange] += amountToAdd;
+                float error2 = lossFunc(characterVals, newFandangledRandomString);
+
+                if (error2 > error)
+                {
+                    newFandangledRandomString[indexToChange] -= amountToAdd;
+                    return error;
+                }
+                return error2;
             }
         }
+
+
     }
     public abstract class CHelper
     {
