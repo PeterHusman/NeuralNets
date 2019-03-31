@@ -59,7 +59,7 @@ namespace NeuralNets
                 await Task.Delay(20);
             }
             Console.WriteLine();
-            Console.WriteLine($"Done! Yay! Only took {steps} iterations!");
+            Console.WriteLine($"Done! Yay! Only took {steps} attempts!");
             Console.ReadKey();
 
             float UpdateStr()
