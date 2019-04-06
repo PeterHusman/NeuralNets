@@ -48,6 +48,20 @@ namespace NeuralNets
             }
         }
 
+        public Matrix GetTranspose()
+        {
+            Matrix outputMatrix = new Matrix(Columns, Rows);
+            for (int r = 0; r < Rows; r++)
+            {
+                for (int c = 0; c < Columns; c++)
+                {
+                    outputMatrix[c, r] = this[r, c];
+                }
+            }
+
+            return outputMatrix;
+        }
+
         public static Matrix operator *(Matrix left, Matrix right)
         {
             if (left.Columns != right.Rows)
@@ -70,7 +84,32 @@ namespace NeuralNets
 
         public static Matrix operator +(Matrix left, Matrix right)
         {
+            Matrix output = new Matrix(left.Rows, left.Columns);
+            for (int i = 0; i < output.Columns; i++)
+            {
+                output.Values[i] = VectorSum(left.Values[i], right.Values[i]).ToArray();
+            }
 
+            return output;
+        }
+
+        public static Matrix operator -(Matrix matrix)
+        {
+            Matrix output = new Matrix(matrix.Values);
+            for (int r = 0; r < matrix.Rows; r++)
+            {
+                for (int c = 0; c < matrix.Columns; c++)
+                {
+                    output[r, c] *= -1;
+                }
+            }
+
+            return output;
+        }
+
+        public static Matrix operator -(Matrix left, Matrix right)
+        {
+            return left + -right;
         }
 
         public static float VectorDotProduct(IEnumerable<float> left, IEnumerable<float> right)
@@ -78,10 +117,10 @@ namespace NeuralNets
             float output = 0f;
             IEnumerator<float> leftEnumerator = left.GetEnumerator();
             IEnumerator<float> rightEnumerator = right.GetEnumerator();
-            do
+            while(leftEnumerator.MoveNext() && rightEnumerator.MoveNext())
             {
                 output += leftEnumerator.Current * rightEnumerator.Current;
-            } while (leftEnumerator.MoveNext() && rightEnumerator.MoveNext());
+            }
             leftEnumerator.Dispose();
             rightEnumerator.Dispose();
             return output;
@@ -89,7 +128,14 @@ namespace NeuralNets
 
         public static IEnumerable<float> VectorSum(IEnumerable<float> left, IEnumerable<float> right)
         {
-
+            IEnumerator<float> leftEnumerator = left.GetEnumerator();
+            IEnumerator<float> rightEnumerator = right.GetEnumerator();
+            while (leftEnumerator.MoveNext() && rightEnumerator.MoveNext())
+            {
+                yield return leftEnumerator.Current + rightEnumerator.Current;
+            }
+            leftEnumerator.Dispose();
+            rightEnumerator.Dispose();
         }
     }
 }

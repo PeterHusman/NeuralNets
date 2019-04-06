@@ -1,22 +1,43 @@
-﻿using System;
-using Newtonsoft.Json;
-using System.IO;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace NeuralNets
 {
-    class Program
+    internal class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
+        {
+            switch (CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta))
+            {
+                case 0:
+                    await HillClimber();
+                    break;
+                case 1:
+                    PerceptronTest();
+                    break;
+            }
+        }
+
+        private static void PerceptronTest()
+        {
+            Perceptron perceptron = new Perceptron(CHelper.RequestInput(@"Please input all weights, starting with the bias and separated by spaces.", true, ConsoleColor.DarkYellow, ConsoleColor.Gray).Split(' ').ToFloats());
+            while (true)
+            {
+                Console.WriteLine(perceptron.Compute(CHelper.RequestInput(@"Input the, well, inputs.", true, ConsoleColor.DarkYellow, ConsoleColor.Gray).Split(' ').ToFloats()));
+            }
+        }
+
+        private static async Task HillClimber()
         {
             Random random = new Random();
-            var errorFuncs = new Func<float[], float[], float>[] { (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += Math.Abs(a[i] - b[i]); } return sumError / a.Length; }, (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += (a[i] - b[i]) * (a[i] - b[i]); } return sumError / a.Length; }, (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += (a[i] - b[i]) * (a[i] - b[i]); } return (float)Math.Sqrt(sumError / a.Length); } };
+            Func<float[], float[], float>[] errorFuncs = new Func<float[], float[], float>[] { (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += Math.Abs(a[i] - b[i]); } return sumError / a.Length; }, (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += (a[i] - b[i]) * (a[i] - b[i]); } return sumError / a.Length; }, (a, b) => { float sumError = 0f; for (int i = 0; i < a.Length; i++) { sumError += (a[i] - b[i]) * (a[i] - b[i]); } return (float)Math.Sqrt(sumError / a.Length); } };
             ConsoleColor startingColor = Console.ForegroundColor;
             string input = CHelper.RequestInput("What is the target string?", true, ConsoleColor.DarkYellow, startingColor);
-            var lossFunc = errorFuncs[CHelper.SelectorMenu("What is the error function?", new string[] { "\tMean Absolute Error", "\tMean Squared Error", "\tRoot Mean Squared Error" }, true, ConsoleColor.DarkYellow, startingColor, ConsoleColor.Magenta)];
+            Func<float[], float[], float> lossFunc = errorFuncs[CHelper.SelectorMenu("What is the error function?", new string[] { "\tMean Absolute Error", "\tMean Squared Error", "\tRoot Mean Squared Error" }, true, ConsoleColor.DarkYellow, startingColor, ConsoleColor.Magenta)];
             CHelper.CenteredWriteLine("Press any key to begin training", ConsoleColor.DarkYellow, Console.CursorTop + 1);
             Console.ReadKey(true);
             float[] characterVals = new float[input.Length];
@@ -31,10 +52,10 @@ namespace NeuralNets
             int steps = 0;
             while (!done)
             {
-                for(int i = 0; i < 50; i++)
+                for (int i = 0; i < 50; i++)
                 {
                     steps++;
-                    if(UpdateStr() == 0)
+                    if (UpdateStr() == 0)
                     {
                         done = true;
                         break;
@@ -42,12 +63,12 @@ namespace NeuralNets
                 }
                 Console.Clear();
                 Console.ForegroundColor = startingColor;
-                
+
                 for (int i = 0; i < characterVals.Length; i++)
                 {
                     Console.Write((char)newFandangledRandomString[i]);
                 }
-                
+
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.Write(" => ");
                 Console.ForegroundColor = startingColor;
@@ -102,7 +123,7 @@ namespace NeuralNets
                     Console.SetCursorPosition(0, row + i);
                     Console.Write(options[i]);
                 }
-                var key = Console.ReadKey(true);
+                ConsoleKeyInfo key = Console.ReadKey(true);
                 if (key.Key == ConsoleKey.UpArrow)
                 {
                     if (wraps)
@@ -154,7 +175,7 @@ namespace NeuralNets
             string str = "";
             while (true)
             {
-                var key = Console.ReadKey(true);
+                ConsoleKeyInfo key = Console.ReadKey(true);
                 if (key.Key == ConsoleKey.Enter)
                 {
                     Console.WriteLine();
