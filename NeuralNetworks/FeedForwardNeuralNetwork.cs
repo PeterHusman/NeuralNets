@@ -16,6 +16,21 @@ namespace NeuralNets.NeuralNetworks
             }
         }
 
+        public void RandomizeWeights(Random rand)
+        {
+            for (int i = 0; i < Layers.Length; i++)
+            {
+                var layer = Layers[i].Item1;
+                for (int j = 0; j < layer.Columns; j++)
+                {
+                    for (int k = 0; k < layer.GetColumn(j).Length; k++)
+                    {
+                        layer[k, j] = (float)rand.NextDouble() - 0.5f;
+                    }
+                }
+            }
+        }
+
         public float[] Compute(float[] inputs)
         {
             float[] outputs = inputs;

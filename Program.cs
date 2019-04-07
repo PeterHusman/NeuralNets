@@ -11,14 +11,21 @@ namespace NeuralNets
     {
         private static async Task Main(string[] args)
         {
-            switch (CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta))
+            int timeWasted = 0;
+            bool wastedTime = false;
+            while (true)
             {
-                case 0:
-                    await HillClimber();
-                    break;
-                case 1:
-                    PerceptronTest();
-                    break;
+                wastedTime = false;
+                switch (CHelper.SelectorMenu(@"Please select the program to run.", new[] {"Hill Climber", "Perceptron"},
+                    true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta))
+                {
+                    case 0:
+                        await HillClimber();
+                        break;
+                    case 1:
+                        PerceptronTest();
+                        break;
+                }
             }
         }
 

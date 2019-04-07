@@ -50,6 +50,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NeuralNetworkFactory.cs" />
     <Compile Include="NeuralNetworks\FeedForwardNeuralNetwork.cs" />
     <Compile Include="Matrix.cs" />
     <Compile Include="Perceptron.cs" />

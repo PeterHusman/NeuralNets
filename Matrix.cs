@@ -9,6 +9,24 @@ namespace NeuralNets
 {
     public class Matrix
     {
+        protected bool Equals(Matrix other)
+        {
+            return this == other;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((Matrix) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return (Values != null ? Values.GetHashCode() : 0);
+        }
+
         public float[][] Values { get; private set; }
 
         public float this[int row, int column]
@@ -62,6 +80,32 @@ namespace NeuralNets
             return outputMatrix;
         }
 
+        public static bool operator ==(Matrix left, Matrix right)
+        {
+            if (left == null || right == null || left.Columns != right.Columns || left.Rows != right.Rows)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < left.Columns; i++)
+            {
+                for (int j = 0; j < left.Rows; j++)
+                {
+                    if (left[j, i] != right[j,i])
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        public static bool operator !=(Matrix left, Matrix right)
+        {
+            return !(left == right);
+        }
+
         public static Matrix operator *(Matrix left, Matrix right)
         {
             if (left.Columns != right.Rows)
@@ -109,7 +153,32 @@ namespace NeuralNets
 
         public static Matrix operator -(Matrix left, Matrix right)
         {
-            return left + -right;
+            Matrix output = new Matrix(left.Rows, left.Columns);
+            for (int i = 0; i < output.Columns; i++)
+            {
+                output.Values[i] = VectorSum(left.Values[i], right.Values[i].Select(x => -x)).ToArray();
+            }
+
+            return output;
+        }
+
+        public int NumberOfItems()
+        {
+            return Columns * Rows;
+        }
+
+        public float Sum(Func<float, float> accumulator)
+        {
+            float sum = 0;
+            for (int i = 0; i < Columns; i++)
+            {
+                for (int j = 0; j < Rows; j++)
+                {
+                    sum += accumulator(this[j, i]);
+                }
+            }
+
+            return sum;
         }
 
         public static float VectorDotProduct(IEnumerable<float> left, IEnumerable<float> right)
