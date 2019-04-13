@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using NeuralNets.NeuralNetworks;
 
 namespace NeuralNets
 {
@@ -12,19 +14,52 @@ namespace NeuralNets
         private static async Task Main(string[] args)
         {
             int timeWasted = 0;
-            bool wastedTime = false;
+            string[] timeWastedStrings = { "Please make a selection.", "Really? I don't have all day.", "Seriously?!?", "I've had enough..." };
             while (true)
             {
-                wastedTime = false;
-                switch (CHelper.SelectorMenu(@"Please select the program to run.", new[] {"Hill Climber", "Perceptron"},
-                    true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta))
+                CancellationTokenSource source = new CancellationTokenSource();
+                CancellationToken token = source.Token;
+                var waitTask = Task.Delay(5000, token);
+                int selection = -1;
+                
+                var chooseTask = Task.Run<int>(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron" },
+                    true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta), token);
+                //waitTask.Start();
+                //chooseTask.Start();
+                if (await Task.WhenAny(waitTask, chooseTask) == chooseTask)
                 {
+                    selection = chooseTask.Result;
+                    //chooseTask.Dispose();
+                }
+                //else
+                //{
+                    source.Cancel();
+                    chooseTask.Dispose();
+                //}
+                source.Dispose();
+                switch (selection)
+                {
+                    case -1:
+                        Console.Clear();
+                        await CHelper.SlowWrite(ConsoleColor.DarkYellow, timeWastedStrings[timeWasted], 50);
+                        timeWasted++;
+                        if (timeWasted >= timeWastedStrings.Length)
+                        {
+                            throw new Exception();
+                        }
+                        break;
                     case 0:
                         await HillClimber();
                         break;
                     case 1:
                         PerceptronTest();
                         break;
+                }
+                //waitTask.Dispose();
+                //chooseTask.Dispose();
+                if (selection != -1 && timeWasted > 0)
+                {
+                    await CHelper.SlowWriteLine(ConsoleColor.DarkYellow, "Thank you for choosing promptly.", 50);
                 }
             }
         }
@@ -116,6 +151,59 @@ namespace NeuralNets
         //    get;
         //    set;
         //}
+        public static async Task<int> SelectorMenu(string prompt, string[] options, bool wraps, ConsoleColor promptColor, ConsoleColor notSelectedColor, ConsoleColor selectedColor, CancellationToken cancelToken)
+        {
+            Console.ForegroundColor = promptColor;
+            Console.WriteLine(prompt);
+            int row = Console.CursorTop;
+            int selectedIndex = 0;
+            while (true)
+            {
+                for (int i = 0; i < options.Length; i++)
+                {
+                    Console.ForegroundColor = i == selectedIndex ? selectedColor : notSelectedColor;
+                    Console.SetCursorPosition(0, row + i);
+                    Console.Write(options[i]);
+                }
+
+                //if(Console.KeyAvailable)
+                ConsoleKeyInfo key = Console.ReadKey(true);
+                if (key.Key == ConsoleKey.UpArrow)
+                {
+                    if (wraps)
+                    {
+                        selectedIndex = (selectedIndex - 1 + options.Length) % options.Length;
+                    }
+                    else
+                    {
+                        if (selectedIndex > 0)
+                        {
+                            selectedIndex--;
+                        }
+                    }
+                }
+                else if (key.Key == ConsoleKey.DownArrow)
+                {
+                    if (wraps)
+                    {
+                        selectedIndex = (selectedIndex + 1) % options.Length;
+                    }
+                    else
+                    {
+                        if (selectedIndex < options.Length - 1)
+                        {
+                            selectedIndex--;
+                        }
+                    }
+                }
+                else if (key.Key == ConsoleKey.Enter)
+                {
+                    return selectedIndex;
+                }
+
+            }
+        }
+
         public static int SelectorMenu(string prompt, string[] options, bool wraps, ConsoleColor promptColor, ConsoleColor notSelectedColor, ConsoleColor selectedColor)
         {
             Console.ForegroundColor = promptColor;
@@ -165,6 +253,38 @@ namespace NeuralNets
                 }
 
             }
+        }
+
+        public static async Task SlowWrite(ConsoleColor color, string text, int msDelay)
+        {
+            Console.ForegroundColor = color;
+            var keyTask = Task.Run(() => Console.ReadKey(true));
+            //keyTask.Start();
+            for (int i = 0; i < text.Length; i++)
+            {
+                Console.Write(text[i]);
+                var delayTask = Task.Delay(msDelay);
+                //delayTask.Start();
+                /*while (!delayTask.IsCompleted && !keyTask.IsCompleted)
+                {
+                    
+                }
+               
+
+                if (keyTask.IsCompleted)*/
+                if(Task.WaitAny(keyTask, delayTask) == 0)
+                {
+                    Console.Write(text.Substring(i + 1));
+                    return;
+                }
+                //delayTask.Dispose();
+                //keyTask.Dispose();
+            }
+        }
+
+        public static async Task SlowWriteLine(ConsoleColor color, string text, int msDelay)
+        {
+            await SlowWrite(color, text + "\n", msDelay);
         }
 
         public static string RequestInput(string prompt, bool inputOnNewLine, ConsoleColor promptColor, ConsoleColor answerColor)

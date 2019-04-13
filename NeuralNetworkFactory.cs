@@ -7,9 +7,9 @@ using NeuralNets.NeuralNetworks;
 
 namespace NeuralNets
 {
-    public class NeuralNetworkFactory
+    public static class NeuralNetworkFactory
     {
-        public FeedForwardNeuralNetwork CreateRandomizedFeedForwardNeuralNetwork(Random rand, int numOfInputs, params (int, Func<float, float>)[] layerInfo)
+        public static FeedForwardNeuralNetwork CreateRandomizedFeedForwardNeuralNetwork(Random rand, int numOfInputs, params (int, Func<float, float>)[] layerInfo)
         {
             int numOfLayers = layerInfo.Length;
             int[] layerLengths = layerInfo.Select(x => x.Item1).ToArray();
@@ -25,6 +25,15 @@ namespace NeuralNets
             var net = new FeedForwardNeuralNetwork(new float[1][][], layerInfo.Select(x => x.Item2).ToArray());
             net.RandomizeWeights(rand ?? new Random());
             return net;
+        }
+
+        public static async Task RandomTrain(FeedForwardNeuralNetwork net, Random rand, float[][] inputs, float[][] outputs)
+        {
+            Matrix targetMatrix = new Matrix(outputs);
+            while ((new Matrix(net.ComputeBatch(inputs)) - targetMatrix).Sum(a => a) != 0)
+            {
+                net.RandomizeWeights(rand);
+            }
         }
 
 
