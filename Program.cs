@@ -11,6 +11,7 @@ namespace NeuralNets
 {
     internal class Program
     {
+        static Func<float, float> act = a => a;
         private static async Task Main(string[] args)
         {
             int timeWasted = 0;
@@ -21,9 +22,9 @@ namespace NeuralNets
                 CancellationToken token = source.Token;
                 var waitTask = Task.Delay(5000, token);
                 int selection = -1;
-                
-                var chooseTask = Task.Run<int>(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron" },
-                    true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta), token);
+
+                Task<int> chooseTask = Task.Run(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron", "XORNet" },
+                    true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta, token), token);
                 //waitTask.Start();
                 //chooseTask.Start();
                 if (await Task.WhenAny(waitTask, chooseTask) == chooseTask)
@@ -31,17 +32,20 @@ namespace NeuralNets
                     selection = chooseTask.Result;
                     //chooseTask.Dispose();
                 }
+                else
+                {
+
+                }
                 //else
                 //{
-                    source.Cancel();
-                    chooseTask.Dispose();
+                source.Cancel();
                 //}
                 source.Dispose();
                 switch (selection)
                 {
                     case -1:
                         Console.Clear();
-                        await CHelper.SlowWrite(ConsoleColor.DarkYellow, timeWastedStrings[timeWasted], 50);
+                        await CHelper.SlowWriteLine(ConsoleColor.DarkYellow, timeWastedStrings[timeWasted], 50);
                         timeWasted++;
                         if (timeWasted >= timeWastedStrings.Length)
                         {
@@ -54,6 +58,9 @@ namespace NeuralNets
                     case 1:
                         PerceptronTest();
                         break;
+                    case 2:
+                        await XORNetTest();
+                        break;
                 }
                 //waitTask.Dispose();
                 //chooseTask.Dispose();
@@ -61,6 +68,17 @@ namespace NeuralNets
                 {
                     await CHelper.SlowWriteLine(ConsoleColor.DarkYellow, "Thank you for choosing promptly.", 50);
                 }
+            }
+        }
+
+        private static async Task XORNetTest()
+        {
+            Random rand = new Random();
+            var net = NeuralNetworkFactory.CreateRandomizedFeedForwardNeuralNetwork(rand, 2, (2, act), (2, act), (1, act));
+            await NeuralNetworkFactory.RandomTrain(net, rand, new[] { new[] { 0f, 0f }, new[] { 0f, 1f }, new[] { 1f, 0f }, new[] { 1f, 1f, } }, new[] { new[] { 0f }, new[] { 1f }, new[] { 1f }, new[] { 0f } });
+            while (true)
+            {
+                Console.WriteLine(net.Compute(CHelper.RequestInput(@"Input the, well, inputs.", true, ConsoleColor.DarkYellow, ConsoleColor.Gray).Split(' ').ToFloats())[0]);
             }
         }
 
@@ -157,7 +175,7 @@ namespace NeuralNets
             Console.WriteLine(prompt);
             int row = Console.CursorTop;
             int selectedIndex = 0;
-            while (true)
+            while (!cancelToken.IsCancellationRequested)
             {
                 for (int i = 0; i < options.Length; i++)
                 {
@@ -166,8 +184,15 @@ namespace NeuralNets
                     Console.Write(options[i]);
                 }
 
-                //if(Console.KeyAvailable)
-                ConsoleKeyInfo key = Console.ReadKey(true);
+                ConsoleKeyInfo key = new ConsoleKeyInfo();
+                while (!Console.KeyAvailable && !cancelToken.IsCancellationRequested)
+                {
+                }
+                if (cancelToken.IsCancellationRequested)
+                {
+                    return -1;//await Task.FromCanceled<int>(cancelToken);
+                }
+                key = Console.ReadKey(true);
                 if (key.Key == ConsoleKey.UpArrow)
                 {
                     if (wraps)
@@ -202,6 +227,8 @@ namespace NeuralNets
                 }
 
             }
+
+            return -1;
         }
 
         public static int SelectorMenu(string prompt, string[] options, bool wraps, ConsoleColor promptColor, ConsoleColor notSelectedColor, ConsoleColor selectedColor)
@@ -272,7 +299,7 @@ namespace NeuralNets
                
 
                 if (keyTask.IsCompleted)*/
-                if(Task.WaitAny(keyTask, delayTask) == 0)
+                if (Task.WaitAny(keyTask, delayTask) == 0)
                 {
                     Console.Write(text.Substring(i + 1));
                     return;

@@ -16,13 +16,13 @@ namespace NeuralNets
             float[][][] weights = new float[numOfLayers][][];
             for (int i = 0; i < numOfLayers; i++)
             {
-                weights[i] = new float[i == 0 ? numOfLayers : layerLengths[i - 1]][];
+                weights[i] = new float[i == 0 ? numOfInputs : layerLengths[i - 1]][];
                 for (int j = 0; j < weights[i].Length; j++)
                 {
                     weights[i][j] = new float[layerLengths[i]];
                 }
             }
-            var net = new FeedForwardNeuralNetwork(new float[1][][], layerInfo.Select(x => x.Item2).ToArray());
+            var net = new FeedForwardNeuralNetwork(weights, layerInfo.Select(x => x.Item2).ToArray());
             net.RandomizeWeights(rand ?? new Random());
             return net;
         }
