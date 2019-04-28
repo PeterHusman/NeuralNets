@@ -12,6 +12,8 @@ namespace NeuralNets
     internal class Program
     {
         static Func<float, float> act = a => a;
+        static Func<float, float> relu = a => a > 0 ? a : 0;
+        static Func<float, float> bin = a => a > 0 ? 1 : 0;
         private static async Task Main(string[] args)
         {
             int timeWasted = 0;
@@ -74,7 +76,7 @@ namespace NeuralNets
         private static async Task XORNetTest()
         {
             Random rand = new Random();
-            var net = NeuralNetworkFactory.CreateRandomizedFeedForwardNeuralNetwork(rand, 2, (2, act), (2, act), (1, act));
+            var net = NeuralNetworkFactory.CreateRandomizedFeedForwardNeuralNetwork(rand, 2, (2, bin), (2, bin), (1, bin));
             await NeuralNetworkFactory.RandomTrain(net, rand, new[] { new[] { 0f, 0f }, new[] { 0f, 1f }, new[] { 1f, 0f }, new[] { 1f, 1f, } }, new[] { new[] { 0f }, new[] { 1f }, new[] { 1f }, new[] { 0f } });
             while (true)
             {

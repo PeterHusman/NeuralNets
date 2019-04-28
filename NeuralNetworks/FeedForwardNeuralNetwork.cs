@@ -6,6 +6,10 @@ namespace NeuralNets.NeuralNetworks
     public class FeedForwardNeuralNetwork
     {
         public (Matrix, Func<float, float>)[] Layers;
+
+        private Matrix[] Inputs;
+        private Matrix[] Outputs;
+        private Matrix[] WeightUpdates;
         
         public FeedForwardNeuralNetwork(float[][][] weights, Func<float, float>[] activationFunctions)
         {
@@ -86,5 +90,16 @@ namespace NeuralNets.NeuralNetworks
 
             return outs2;
         }
+
+        public void GradientDescent(float[][] inputs, float[][] desiredOutputs)
+        {
+            Inputs = new Matrix[Layers.Length];
+            Outputs = new Matrix[Layers.Length];
+            WeightUpdates = new Matrix[Layers.Length];
+
+
+        }
+
+
     }
 }

@@ -16,7 +16,7 @@ namespace NeuralNets
             float[][][] weights = new float[numOfLayers][][];
             for (int i = 0; i < numOfLayers; i++)
             {
-                weights[i] = new float[i == 0 ? numOfInputs : layerLengths[i - 1]][];
+                weights[i] = new float[(i == 0 ? numOfInputs : layerLengths[i - 1]) + 1][];
                 for (int j = 0; j < weights[i].Length; j++)
                 {
                     weights[i][j] = new float[layerLengths[i]];
@@ -30,7 +30,7 @@ namespace NeuralNets
         public static async Task RandomTrain(FeedForwardNeuralNetwork net, Random rand, float[][] inputs, float[][] outputs)
         {
             Matrix targetMatrix = new Matrix(outputs);
-            while ((new Matrix(net.ComputeBatch(inputs)) - targetMatrix).Sum(a => a) != 0)
+            while ((new Matrix(net.ComputeBatch(inputs)) - targetMatrix).Sum(a => a*a) != 0)
             {
                 net.RandomizeWeights(rand);
             }
