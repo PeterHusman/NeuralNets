@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace NeuralNets.NeuralNetworks
@@ -64,6 +65,49 @@ namespace NeuralNets.NeuralNetworks
             }
 
             return outputs;
+        }
+
+        public void GradientDescent(float[][] inputs, float[][] desiredOutputs, float learningRate)
+        {
+
+        }
+
+        private float[][] ComputeBatchWithRecords(float[][] inputs)
+        {
+            float[][] outputs = inputs;
+            for (int i = 0; i < Layers.Length; i++)
+            {
+                (Inputs[i], outputs) = ComputeLayerBatchWithRecords(outputs, Layers[i].Item1, Layers[i].Item2);
+                Outputs[i] = outputs;
+            }
+
+            return outputs;
+        }
+
+        private static (float[][], float[][]) ComputeLayerBatchWithRecords(float[][] inputs, Matrix layerWeights, Func<float, float> activationFunction)
+        {
+            float[][] insWithBias = new float[inputs.Length][];
+            for (int i = 0; i < insWithBias.Length; i++)
+            {
+                insWithBias[i] = new float[inputs[i].Length + 1];
+                insWithBias[i][0] = 1;
+                inputs[i].CopyTo(insWithBias[i], 1);
+            }
+            var weightedInputs = layerWeights * insWithBias;
+            var outputs = weightedInputs.Values.Select(x => x.Select(activationFunction));
+            if (outputs is float[][] arr)
+            {
+                return (weightedInputs, arr);
+            }
+
+            var outs1 = outputs.ToArray();
+            var outs2 = new float[outs1.Length][];
+            for (var index = 0; index < outs1.Length; index++)
+            {
+                outs2[index] = outs1[index].ToArray();
+            }
+
+            return (weightedInputs, outs2);
         }
 
         static float[][] ComputeLayerBatch(float[][] inputs, Matrix layerWeights, Func<float, float> activationFunction)

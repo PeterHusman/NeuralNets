@@ -9,6 +9,16 @@ namespace NeuralNets
 {
     public class Matrix
     {
+        public static implicit operator Matrix(float[][] a)
+        {
+            return new Matrix(a);
+        }
+
+        public static implicit operator float[][](Matrix a)
+        {
+            return a.Values;
+        }
+
         protected bool Equals(Matrix other)
         {
             return this == other;
