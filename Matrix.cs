@@ -53,6 +53,30 @@ namespace NeuralNets
             }
         }
 
+        public void TransformValues(Func<int, int, float, float> func)
+        {
+            for(int r = 0; r < Rows; r++)
+            {
+                for(int c = 0; c < Columns; c++)
+                {
+                    this[r, c] = func(r, c, this[r, c]);
+                }
+            }
+        }
+
+        public Matrix Transform(Func<int, int, float, float> func)
+        {
+            Matrix output = new Matrix(Rows, Columns);
+            for (int r = 0; r < Rows; r++)
+            {
+                for (int c = 0; c < Columns; c++)
+                {
+                    output[r, c] = func(r, c, this[r, c]);
+                }
+            }
+            return output;
+        }
+
         public float[] GetColumn(int columnNumber)
         {
             return Values[columnNumber];
@@ -114,6 +138,19 @@ namespace NeuralNets
         public static bool operator !=(Matrix left, Matrix right)
         {
             return !(left == right);
+        }
+
+        public static Matrix operator *(float left, Matrix right)
+        {
+            Matrix output = new Matrix(right.Rows, right.Columns);
+            for(int i = 0; i < right.Values.Length; i++)
+            {
+                for(int j = 0; j < right.Values[i].Length; j++)
+                {
+                    output.Values[i][j] = right.Values[i][j] * left;
+                }
+            }
+            return output;
         }
 
         public static Matrix operator *(Matrix left, Matrix right)

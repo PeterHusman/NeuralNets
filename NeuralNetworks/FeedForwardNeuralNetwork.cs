@@ -11,7 +11,8 @@ namespace NeuralNets.NeuralNetworks
         private Matrix[] Inputs;
         private Matrix[] Outputs;
         private Matrix[] WeightUpdates;
-        
+        private Matrix[] PartialDerivatives;
+
         public FeedForwardNeuralNetwork(float[][][] weights, Func<float, float>[] activationFunctions)
         {
             Layers = new (Matrix, Func<float, float>)[weights.Length];
@@ -52,7 +53,7 @@ namespace NeuralNets.NeuralNetworks
             float[] insWithBias = new float[inputs.Length + 1];
             insWithBias[0] = 1;
             inputs.CopyTo(insWithBias, 1);
-            var outputs = (layerWeights * new Matrix(new []{insWithBias})).GetColumn(0).Select(activationFunction);
+            var outputs = (layerWeights * new Matrix(new[] { insWithBias })).GetColumn(0).Select(activationFunction);
             return (outputs as float[]) ?? outputs.ToArray();
         }
 
@@ -67,9 +68,17 @@ namespace NeuralNets.NeuralNetworks
             return outputs;
         }
 
-        public void GradientDescent(float[][] inputs, float[][] desiredOutputs, float learningRate)
+        public void GradientDescent(float[][] inputs, float[][] desiredOutputs, float learningRate, Func<float, float>[] layerDerivatives)
         {
-
+            WeightUpdates = new Matrix[Layers.Length];
+            PartialDerivatives = new Matrix[Layers.Length];
+            Matrix output = ComputeBatchWithRecords(inputs);
+            var errors = desiredOutputs - output;
+            PartialDerivatives[Layers.Length - 1] = errors.Transform((r, c, v) => layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1][r, c]) * v);
+            for (int i = Layers.Length - 2; i >= 0; i--)
+            {
+                PartialDerivatives[i] = Layers[i].Item1.Transform((r, c, v) => layerDerivatives[i](Inputs[i][r, c]) * Layers[i+1].Item1.GetRow(c).Sum(/* This needs to incorporate the partialDerivative -- do this next, will require a different function. */));
+            }
         }
 
         private float[][] ComputeBatchWithRecords(float[][] inputs)
