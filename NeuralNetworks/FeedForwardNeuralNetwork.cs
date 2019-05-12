@@ -6,6 +6,8 @@ namespace NeuralNets.NeuralNetworks
 {
     public class FeedForwardNeuralNetwork
     {
+        //Columns = weights
+        //Rows = neurons
         public (Matrix, Func<float, float>)[] Layers;
 
         private Matrix[] Inputs;
@@ -68,17 +70,60 @@ namespace NeuralNets.NeuralNetworks
             return outputs;
         }
 
-        public void GradientDescent(float[][] inputs, float[][] desiredOutputs, float learningRate, Func<float, float>[] layerDerivatives)
+        public float GradientDescent(float[][] inputs, float[][] desiredOutputs, float learningRate)
         {
+            Func<float, float>[] layerDerivatives = new Func<float, float>[Layers.Length];
+            for(int i = 0; i < layerDerivatives.Length; i++)
+            {
+                layerDerivatives[i] = ActivationFunctions.DefaultFunctionData[Layers[i].Item2];
+            }
+            return GradientDescent(inputs, desiredOutputs, learningRate, layerDerivatives);
+        }
+
+        public float GradientDescent(float[][] inputs, float[][] desiredOutputs, float learningRate, Func<float, float>[] layerDerivatives)
+        {
+            Inputs = new Matrix[Layers.Length];
+            Outputs = new Matrix[Layers.Length];
             WeightUpdates = new Matrix[Layers.Length];
             PartialDerivatives = new Matrix[Layers.Length];
             Matrix output = ComputeBatchWithRecords(inputs);
             var errors = desiredOutputs - output;
+            float outputError = errors.Sum(a => Math.Abs(a)) / (desiredOutputs.Length* desiredOutputs[0].Length);
             PartialDerivatives[Layers.Length - 1] = errors.Transform((r, c, v) => layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1][r, c]) * v);
+            //Probably doesn't work, test later
+            //Update: Can confirm, doesn't work. Fixing
             for (int i = Layers.Length - 2; i >= 0; i--)
             {
-                PartialDerivatives[i] = Layers[i].Item1.Transform((r, c, v) => layerDerivatives[i](Inputs[i][r, c]) * Layers[i+1].Item1.GetRow(c).Sum(/* This needs to incorporate the partialDerivative -- do this next, will require a different function. */));
+                float Error(int row, int column, float value)
+                {
+                    return PartialDerivatives[i + 1][row, column] * value;
+                }
+                float PartialD(int row, int column, float value)
+                {
+                    float actPrime = layerDerivatives[i](Inputs[i][row, column]);
+                    
+                    float error = Layers[i + 1].Item1.GetColumnAsMatrix(row).Transform(Error).Sum(a => a);
+                    return actPrime * error;
+                }
+                PartialDerivatives[i] = Layers[i].Item1.Transform(PartialD);
             }
+
+            //Calculate WeightUpdates
+            WeightUpdates[0] = PartialDerivatives[0].Transform((r, c, v) => (r < inputs.Length && c < inputs[0].Length ?
+            inputs[r][c] : 1)
+            * learningRate * v);
+            //Stopped making it work here, continue next time
+            for(int i = 1; i < Layers.Length; i++)
+            {
+                WeightUpdates[i] = PartialDerivatives[i].Transform((r, c, v) => ( r < Outputs[i-1].Rows && c < Outputs[i-1].Columns ? Outputs[i - 1][r, c] : 1) * v * learningRate);
+            }
+
+            for(int i = 0; i < Layers.Length; i++)
+            {
+                Layers[i].Item1 += WeightUpdates[i];
+            }
+
+            return outputError;
         }
 
         private float[][] ComputeBatchWithRecords(float[][] inputs)
@@ -142,15 +187,6 @@ namespace NeuralNets.NeuralNetworks
             }
 
             return outs2;
-        }
-
-        public void GradientDescent(float[][] inputs, float[][] desiredOutputs)
-        {
-            Inputs = new Matrix[Layers.Length];
-            Outputs = new Matrix[Layers.Length];
-            WeightUpdates = new Matrix[Layers.Length];
-
-
         }
 
 

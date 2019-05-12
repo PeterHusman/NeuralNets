@@ -25,7 +25,7 @@ namespace NeuralNets
                 var waitTask = Task.Delay(5000, token);
                 int selection = -1;
 
-                Task<int> chooseTask = Task.Run(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron", "XORNet" },
+                Task<int> chooseTask = Task.Run(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron", "XORNet - Random Train", "Factorial - Gradient Descent" },
                     true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta, token), token);
                 //waitTask.Start();
                 //chooseTask.Start();
@@ -63,6 +63,9 @@ namespace NeuralNets
                     case 2:
                         await XORNetTest();
                         break;
+                    case 3:
+                        await GradientTest();
+                        break;
                 }
                 //waitTask.Dispose();
                 //chooseTask.Dispose();
@@ -70,6 +73,17 @@ namespace NeuralNets
                 {
                     await CHelper.SlowWriteLine(ConsoleColor.DarkYellow, "Thank you for choosing promptly.", 50);
                 }
+            }
+        }
+
+        private static async Task GradientTest()
+        {
+            Random rand = new Random();
+            var net = NeuralNetworkFactory.CreateRandomizedFeedForwardNeuralNetwork(rand, 1, (2, ActivationFunctions.Sigmoid), (2, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
+            await NeuralNetworkFactory.GradientDescentTrain(net, new[] { new[] { 1f }, new[] { 2f }, new[] { 3f }, new[] { 4f } }, new[] { new[] { 1f }, new[] { 2f }, new[] { 6f }, new[] { 24f } }, 0.01f);
+            while (true)
+            {
+                Console.WriteLine(net.Compute(CHelper.RequestInput(@"Input the, well, inputs.", true, ConsoleColor.DarkYellow, ConsoleColor.Gray).Split(' ').ToFloats())[0]);
             }
         }
 

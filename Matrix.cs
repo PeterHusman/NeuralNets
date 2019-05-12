@@ -53,6 +53,21 @@ namespace NeuralNets
             }
         }
 
+        public Matrix GetColumnAsMatrix(int columnNumber)
+        {
+            return new Matrix(new[] { Values[columnNumber] });
+        }
+
+        public Matrix GetRowAsMatrix(int rowNumber)
+        {
+            float[][] values = new float[Columns][];
+            for(int i = 0; i < Columns; i++)
+            {
+                values[i] = new[] { Values[i][rowNumber] };
+            }
+            return new Matrix(values);
+        }
+
         public void TransformValues(Func<int, int, float, float> func)
         {
             for(int r = 0; r < Rows; r++)
