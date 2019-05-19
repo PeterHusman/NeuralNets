@@ -88,10 +88,11 @@ namespace NeuralNets.NeuralNetworks
             PartialDerivatives = new Matrix[Layers.Length];
             Matrix output = ComputeBatchWithRecords(inputs);
             var errors = desiredOutputs - output;
-            float outputError = errors.Sum(a => Math.Abs(a)) / (desiredOutputs.Length* desiredOutputs[0].Length);
+            float outputError = errors.Sum(a => Math.Abs(a)) / (desiredOutputs.Length * desiredOutputs[0].Length);
+            
+            //Bug here! The sizes are wonky.
             PartialDerivatives[Layers.Length - 1] = errors.Transform((r, c, v) => layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1][r, c]) * v);
-            //Probably doesn't work, test later
-            //Update: Can confirm, doesn't work. Fixing
+
             for (int i = Layers.Length - 2; i >= 0; i--)
             {
                 float Error(int row, int column, float value)
@@ -112,7 +113,6 @@ namespace NeuralNets.NeuralNetworks
             WeightUpdates[0] = PartialDerivatives[0].Transform((r, c, v) => (r < inputs.Length && c < inputs[0].Length ?
             inputs[r][c] : 1)
             * learningRate * v);
-            //Stopped making it work here, continue next time
             for(int i = 1; i < Layers.Length; i++)
             {
                 WeightUpdates[i] = PartialDerivatives[i].Transform((r, c, v) => ( r < Outputs[i-1].Rows && c < Outputs[i-1].Columns ? Outputs[i - 1][r, c] : 1) * v * learningRate);
