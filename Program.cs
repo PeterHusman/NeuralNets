@@ -79,7 +79,7 @@ namespace NeuralNets
         private static async Task GradientTest()
         {
             Random rand = new Random();
-            var net = NeuralNetworkFactory.CreateRandomizedFeedForwardNeuralNetwork(rand, 1, (5, ActivationFunctions.ReLU), (7, ActivationFunctions.ReLU), (1, ActivationFunctions.ReLU));
+            var net = NeuralNetworkFactory.CreateRandomizedFeedForwardNeuralNetwork(rand, 1, (7, ActivationFunctions.ReLU), (7, ActivationFunctions.ReLU), (1, ActivationFunctions.ReLU));
             await NeuralNetworkFactory.GradientDescentTrain(net, new[] { new[] { 1f }, new[] { 2f }, new[] { 3f }, new[] { 4f }, new[] { 5f }, new[] { 6f } }, new[] { new[] { 1f }, new[] { 2f }, new[] { 6f }, new[] { 24f }, new[] { 120f }, new[] { 720f } }, 1f);
             while (true)
             {

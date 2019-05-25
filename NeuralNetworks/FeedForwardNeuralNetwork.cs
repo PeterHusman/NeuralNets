@@ -89,38 +89,42 @@ namespace NeuralNets.NeuralNetworks
             Matrix output = ComputeBatchWithRecords(inputs);
             var errors = desiredOutputs - output;
             float outputError = errors.Sum(a => Math.Abs(a)) / (desiredOutputs.Length * desiredOutputs[0].Length);
-            
-            //Bug here! The sizes are wonky.
-            PartialDerivatives[Layers.Length - 1] = errors.Transform((r, c, v) => layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1][r, c]) * v);
 
-            for (int i = Layers.Length - 2; i >= 0; i--)
+            for (int j = 0; j < errors.Columns; j++)
             {
-                float Error(int row, int column, float value)
+
+                //Bug here! The sizes are wonky.
+                PartialDerivatives[Layers.Length - 1] = Layers.Last().Item1.Transform((r, c, v) => layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1].GetColumn(j)[r]) * errors[r,j]);//errors.Transform((r, c, v) => layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1][r, c]) * v);
+
+                for (int i = Layers.Length - 2; i >= 0; i--)
                 {
-                    return PartialDerivatives[i + 1][row, column] * value;
+                    float Error(int row, int column, float value)
+                    {
+                        return PartialDerivatives[i + 1][row, column] * value;
+                    }
+                    float PartialD(int row, int column, float value)
+                    {
+                        float actPrime = layerDerivatives[i](Inputs[i][row, j]);
+
+                        float error = Layers[i + 1].Item1.GetColumnAsMatrix(row).Transform(Error).Sum(a => a);
+                        return actPrime * error;
+                    }
+                    PartialDerivatives[i] = Layers[i].Item1.Transform(PartialD);
                 }
-                float PartialD(int row, int column, float value)
+
+                //Calculate WeightUpdates
+                WeightUpdates[0] = PartialDerivatives[0].Transform((r, c, v) => (r < inputs.Length && c < inputs[0].Length ?
+                inputs[r][c] : 1)
+                * learningRate * v);
+                for (int i = 1; i < Layers.Length; i++)
                 {
-                    float actPrime = layerDerivatives[i](Inputs[i][row, column]);
-                    
-                    float error = Layers[i + 1].Item1.GetColumnAsMatrix(row).Transform(Error).Sum(a => a);
-                    return actPrime * error;
+                    WeightUpdates[i] = PartialDerivatives[i].Transform((r, c, v) => (r < Outputs[i - 1].Rows && c < Outputs[i - 1].Columns ? Outputs[i - 1][r, c] : 1) * v * learningRate);
                 }
-                PartialDerivatives[i] = Layers[i].Item1.Transform(PartialD);
-            }
 
-            //Calculate WeightUpdates
-            WeightUpdates[0] = PartialDerivatives[0].Transform((r, c, v) => (r < inputs.Length && c < inputs[0].Length ?
-            inputs[r][c] : 1)
-            * learningRate * v);
-            for(int i = 1; i < Layers.Length; i++)
-            {
-                WeightUpdates[i] = PartialDerivatives[i].Transform((r, c, v) => ( r < Outputs[i-1].Rows && c < Outputs[i-1].Columns ? Outputs[i - 1][r, c] : 1) * v * learningRate);
-            }
-
-            for(int i = 0; i < Layers.Length; i++)
-            {
-                Layers[i].Item1 += WeightUpdates[i];
+                for (int i = 0; i < Layers.Length; i++)
+                {
+                    Layers[i].Item1 += WeightUpdates[i];
+                }
             }
 
             return outputError;
