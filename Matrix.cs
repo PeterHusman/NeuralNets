@@ -243,6 +243,11 @@ namespace NeuralNets
             return sum;
         }
 
+        public float Sum()
+        {
+            return Sum(a => a);
+        }
+
         public static float VectorDotProduct(IEnumerable<float> left, IEnumerable<float> right)
         {
             float output = 0f;
