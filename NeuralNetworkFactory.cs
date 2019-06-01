@@ -36,11 +36,11 @@ namespace NeuralNets
             }
         }
 
-        public static async Task GradientDescentTrain(FeedForwardNeuralNetwork net, float[][] inputs, float[][] desiredOutputs, float learningRate)//, Func<float, float>[] derivatives)
+        public static async Task GradientDescentTrain(FeedForwardNeuralNetwork net, float[][] inputs, float[][] desiredOutputs, float learningRate, float thresholdError, float decayBase = 1f)//, Func<float, float>[] derivatives)
         {
-            while(net.GradientDescent(inputs, desiredOutputs, learningRate/*, derivatives*/) >= 1f)
+            while(net.GradientDescent(inputs, desiredOutputs, learningRate/*, derivatives*/) >= thresholdError)
             {
-
+                learningRate *= decayBase;
             }
         }
 

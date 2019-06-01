@@ -9,6 +9,24 @@ namespace NeuralNets
 {
     public class Matrix
     {
+        public string Stringify
+        {
+            get
+            {
+                StringBuilder output = new StringBuilder();
+                for(int i = 0; i < Rows; i++)
+                {
+                    for(int j = 0; j < Columns; j++)
+                    {
+                        output.Append(this[i, j]);
+                        output.Append("\t");
+                    }
+                    output.Append("\n");
+                }
+                return output.ToString();
+            }
+        }
+
         public static implicit operator Matrix(float[][] a)
         {
             return new Matrix(a);

@@ -10,7 +10,7 @@ namespace NeuralNets.NeuralNetworks
     {
         public static Dictionary<Func<float, float>, Func<float, float>> DefaultFunctionData
         {
-            get => new Dictionary<Func<float, float>, Func<float, float>> { [Sigmoid] = SigmoidDerivative, [ReLU] = ReLUDerivative, [BinaryStep] = BinaryStepDerivative, [SoftPlus] = SoftPlusDerivative };
+            get => new Dictionary<Func<float, float>, Func<float, float>> { [Sigmoid] = SigmoidDerivative, [ReLU] = ReLUDerivative, [BinaryStep] = BinaryStepDerivative, [SoftPlus] = SoftPlusDerivative, [Identity] = IdentityDerivative };
         }
 
         public static float ReLU(float input)
@@ -52,6 +52,16 @@ namespace NeuralNets.NeuralNetworks
         {
             float output = Sigmoid(input);
             return output * (1 - output);
+        }
+
+        public static float Identity(float input)
+        {
+            return input;
+        }
+
+        public static float IdentityDerivative(float input)
+        {
+            return 1;
         }
 
     }

@@ -88,7 +88,16 @@ namespace NeuralNets.NeuralNetworks
             PartialDerivatives = new float[Layers.Length][];
             Matrix output = ComputeBatchWithRecords(inputs);
             var errors = desiredOutputs - output;
-            float outputError = errors.Sum(a => Math.Abs(a)) / (desiredOutputs.Length * desiredOutputs[0].Length);
+            float outputError = errors.Sum(a => Math.Abs(a)) / (errors.Columns * errors.Rows);//(desiredOutputs.Length * desiredOutputs[0].Length);
+            if(float.IsInfinity(outputError))
+            {
+                ;
+            }
+
+            if(float.IsNaN(outputError))
+            {
+                ;
+            }
 
             for (int j = 0; j < errors.Columns; j++)
             {
@@ -108,18 +117,14 @@ namespace NeuralNets.NeuralNetworks
                     {
                         return PartialDerivatives[i + 1][row] * value;
                     }
-                    float PartialD(int row, int column, float value)
-                    {
-                        float actPrime = layerDerivatives[i](Inputs[i][row, j]);
 
-                        float error = Layers[i + 1].Item1.GetColumnAsMatrix(row).Transform(Error).Sum();
-                        return actPrime * error;
-                    }
                     PartialDerivatives[i] = new float[Layers[i].Item1.Rows];
                     for (int k = 0; k < PartialDerivatives[i].Length; k++)
                     {
                         //= Layers[i].Item1.Transform(PartialD);
-                        PartialDerivatives[i][k] = layerDerivatives[i](Inputs[i][k, j]) * Layers[i + 1].Item1.GetColumnAsMatrix(k).Transform(Error).Sum();
+                        float actPrime = layerDerivatives[i](Inputs[i][k, j]);
+                        float error = Layers[i + 1].Item1.GetColumnAsMatrix(k).Transform(Error).Sum();
+                        PartialDerivatives[i][k] = actPrime * error;
                     }
                 }
 
