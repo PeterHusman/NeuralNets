@@ -38,10 +38,22 @@ namespace NeuralNets
 
         public static async Task GradientDescentTrain(FeedForwardNeuralNetwork net, float[][] inputs, float[][] desiredOutputs, float learningRate, float thresholdError, float decayBase = 1f)//, Func<float, float>[] derivatives)
         {
-            while(net.GradientDescent(inputs, desiredOutputs, learningRate/*, derivatives*/) >= thresholdError)
+            while (net.GradientDescent(inputs, desiredOutputs, learningRate/*, derivatives*/) >= thresholdError)
             {
                 learningRate *= decayBase;
             }
+        }
+
+        public static IEnumerable<float> GradientDescentTrainCoroutine(FeedForwardNeuralNetwork net, float[][] inputs, float[][] desiredOutputs, float learningRate, float thresholdError, float decayBase = 1f)//, Func<float, float>[] derivatives)
+        {
+            float error = 0f;
+            do
+            {
+                error = net.GradientDescent(inputs, desiredOutputs, learningRate/*, derivatives*/);
+                learningRate *= decayBase;
+                yield return error;
+            }
+            while (error >= thresholdError);
         }
 
 

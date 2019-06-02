@@ -102,12 +102,11 @@ namespace NeuralNets.NeuralNetworks
             for (int j = 0; j < errors.Columns; j++)
             {
 
-                //Bug here! The sizes are wonky.
                 PartialDerivatives[Layers.Length - 1] = new float[Layers.Last().Item1.Rows];
                 for(int i = 0; i < PartialDerivatives[Layers.Length - 1].Length; i++)
                 {
                     //Layers.Last().Item1.Transform((r, c, v) => layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1].GetColumn(j)[r]) * errors[r,j]);//errors.Transform((r, c, v) => layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1][r, c]) * v);
-                    PartialDerivatives[Layers.Length - 1][i] = layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1].GetColumn(j)[i]) * errors[i, j];
+                    PartialDerivatives[Layers.Length - 1][i] = layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1][i, j]) * errors[i, j];
                 }
                 
 

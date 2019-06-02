@@ -208,6 +208,10 @@ namespace NeuralNets
 
         public static Matrix operator +(Matrix left, Matrix right)
         {
+            if(left.Columns != right.Columns || left.Rows != right.Rows)
+            {
+                throw new ArgumentException("Matrices must have the same dimensions to be added.");
+            }
             Matrix output = new Matrix(left.Rows, left.Columns);
             for (int i = 0; i < output.Columns; i++)
             {
@@ -233,6 +237,10 @@ namespace NeuralNets
 
         public static Matrix operator -(Matrix left, Matrix right)
         {
+            if (left.Columns != right.Columns || left.Rows != right.Rows)
+            {
+                throw new ArgumentException("Matrices must have the same dimensions to be subtracted.");
+            }
             Matrix output = new Matrix(left.Rows, left.Columns);
             for (int i = 0; i < output.Columns; i++)
             {
