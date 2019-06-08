@@ -190,7 +190,7 @@ namespace NeuralNets
         {
             if (left.Columns != right.Rows)
             {
-                throw new ArgumentException();
+                throw new ArgumentException($"The left matrix ({left.Rows} rows by {left.Columns} columns) must have a number of columns equal to the number of rows in the right matrix ({right.Rows} rows by {right.Columns} columns) to multiply.");
             }
 
             Matrix product = new Matrix(left.Rows, right.Columns);
@@ -298,6 +298,11 @@ namespace NeuralNets
             }
             leftEnumerator.Dispose();
             rightEnumerator.Dispose();
+        }
+
+        public override string ToString()
+        {
+            return Stringify;
         }
     }
 }

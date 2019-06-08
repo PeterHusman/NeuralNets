@@ -10,10 +10,10 @@ namespace NeuralNets.NeuralNetworks
         //Rows = neurons
         public (Matrix, Func<float, float>)[] Layers;
 
-        private Matrix[] Inputs;
-        private Matrix[] Outputs;
-        private Matrix[] WeightUpdates;
-        private float[][] PartialDerivatives;
+        public Matrix[] Inputs;
+        public Matrix[] Outputs;
+        public Matrix[] WeightUpdates;
+        public float[][] PartialDerivatives;
 
         public FeedForwardNeuralNetwork(float[][][] weights, Func<float, float>[] activationFunctions)
         {
@@ -50,7 +50,7 @@ namespace NeuralNets.NeuralNetworks
             return outputs;
         }
 
-        static float[] ComputeLayer(float[] inputs, Matrix layerWeights, Func<float, float> activationFunction)
+        public static float[] ComputeLayer(float[] inputs, Matrix layerWeights, Func<float, float> activationFunction)
         {
             float[] insWithBias = new float[inputs.Length + 1];
             insWithBias[0] = 1;
@@ -183,7 +183,7 @@ namespace NeuralNets.NeuralNetworks
             return (weightedInputs, outs2);
         }
 
-        static float[][] ComputeLayerBatch(float[][] inputs, Matrix layerWeights, Func<float, float> activationFunction)
+        public static float[][] ComputeLayerBatch(float[][] inputs, Matrix layerWeights, Func<float, float> activationFunction)
         {
             float[][] insWithBias = new float[inputs.Length][];
             for (int i = 0; i < insWithBias.Length; i++)
