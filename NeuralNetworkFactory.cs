@@ -55,6 +55,22 @@ namespace NeuralNets
             }
             while (error >= thresholdError);
         }
+        public static IEnumerable<float> StochasticDescentTrainCoroutine(FeedForwardNeuralNetwork net, float[][] inputs, float[][] desiredOutputs, float learningRate, float thresholdError, float decayBase = 1f)//, Func<float, float>[] derivatives)
+        {
+            float error = 0f;
+            do
+            {
+                error = 0f;
+                for (int i = 0; i < inputs.Length; i++)
+                {
+                    error += net.GradientDescent(new[] { inputs[i] }, new[] { desiredOutputs[i] }, learningRate/*, derivatives*/);
+                }
+                error /= inputs.Length;
+                learningRate *= decayBase;
+                yield return error;
+            }
+            while (error >= thresholdError);
+        }
 
 
     }

@@ -88,7 +88,7 @@ namespace NeuralNets
                 inputs[i] = new float[] { i };
                 outputs[i] = new float[] { 2*i };
             }*/
-            var a = NeuralNetworkFactory.GradientDescentTrainCoroutine(net, inputs, outputs, 2f, 0.01f);
+            var a = NeuralNetworkFactory.GradientDescentTrainCoroutine(net, inputs, outputs, 0.01f, 0.01f);
 
             foreach (var b in a)
             {
