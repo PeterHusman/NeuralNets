@@ -112,6 +112,10 @@ namespace NeuralNets
 
         public float[] GetColumn(int columnNumber)
         {
+            if(columnNumber >= Columns)
+            {
+                throw new IndexOutOfRangeException($"A request for the column at index {columnNumber} in a matrix of {Columns} columns is invalid.");
+            }
             return Values[columnNumber];
         }
 

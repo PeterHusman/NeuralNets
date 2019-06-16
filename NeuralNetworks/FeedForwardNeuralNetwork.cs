@@ -98,10 +98,12 @@ namespace NeuralNets.NeuralNetworks
 
             for (int j = 0; j < inputs.Length; j++)
             {
+                Inputs = new Matrix[Layers.Length];
+                Outputs = new Matrix[Layers.Length];
                 Matrix errors = (Matrix)ComputeBatchWithRecords(new[] { inputs[j] }) - new[] { desiredOutputs[j] };
                 outputError += (errors).Sum(a => Math.Abs(a)) / (desiredOutputs[j].Length);
 
-                FindDerivatives(layerDerivatives, errors.GetColumn(j), Inputs/*The jth column of each*/);
+                FindDerivatives(layerDerivatives, errors.GetColumn(0), Inputs.Select(a => a.GetColumn(0)/*.ToArray()*/).ToArray()/*The jth column of each*/);
 
 
                 FindUpdates(inputs, learningRate);
