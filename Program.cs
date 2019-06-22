@@ -79,7 +79,7 @@ namespace NeuralNets
         private static async Task GradientTest()
         {
             Random rand = new Random();
-            var net = NeuralNetworkFactory.CreateRandomizedFeedForwardNeuralNetwork(rand, 2, (2, ActivationFunctions.Sigmoid), (2, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
+            var net = NeuralNetworkFactory.CreateRandomizedFeedForwardNeuralNetwork(rand, 2, (2, ActivationFunctions.Sigmoid), (4, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
             int n = 50;
             float[][] inputs = new[] { /*new[] { 0f, 0f }, new[] { 0f, 1f },*/ new[] { 1f, 0f, }, new[] { 1f, 1f } };//new float[n][];
             float[][] outputs = new[] { /*new[] { 0f }, new[] { 1f },*/ new[] { 1f }, new[] { 0f } };//new float[n][];
@@ -92,37 +92,42 @@ namespace NeuralNets
 
             foreach (var b in a)
             {
-                Matrix input = new[] { new[] { 1f, 0f } };
-                float target = input.Values[0][0] == input.Values[0][1] ? 0 : 1;
+                Matrix input = new[] { new[] { 1f, 0f }, new[] { 1f, 1f } };
+                Matrix target = new [] { new float[] { 1f }, new float[] { 0f } };
                 Console.SetCursorPosition(0, 5);
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine(b);
                 Console.WriteLine();
                 Matrix output = input;
                 Console.WriteLine(output);
-                output = FeedForwardNeuralNetwork.ComputeLayerBatch(new[] { new float[] { 1f, 0f } }, net.Layers[0].Item1, net.Layers[0].Item2);
+                output = FeedForwardNeuralNetwork.ComputeLayerBatch(input, net.Layers[0].Item1, net.Layers[0].Item2);
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(net.Layers[0].Item1/*new Matrix(new[] { net.PartialDerivatives[0] })*/);
+                Console.WriteLine(/*net.Layers[0].Item1*/new Matrix(new[] { net.PartialDerivatives[0] }));
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine(output.Stringify);
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(net.Layers[1].Item1/*new Matrix(new[] { net.PartialDerivatives[1] })*/);
+                Console.WriteLine(/*net.Layers[1].Item1*/new Matrix(new[] { net.PartialDerivatives[1] }));
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 output = FeedForwardNeuralNetwork.ComputeLayerBatch(output, net.Layers[1].Item1, net.Layers[1].Item2);
                 Console.WriteLine(output);
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(net.Layers[2].Item1/*new Matrix(new[] { net.PartialDerivatives[2] })*/);
+                Console.WriteLine(/*net.Layers[2].Item1*/new Matrix(new[] { net.PartialDerivatives[2] }));
                 Console.WriteLine();
                 output = FeedForwardNeuralNetwork.ComputeLayerBatch(output, net.Layers[2].Item1, net.Layers[2].Item2);
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine(output.Stringify);
 
                 Console.WriteLine();
-                Console.WriteLine(output - new Matrix(new[] { new[] { target } }));
+                Console.WriteLine(output - target);
+                if(Console.KeyAvailable)
+                {
+                    Console.ReadKey(true);
+                    break;
+                }
                 //Console.WriteLine("     ");
             }
 

@@ -110,6 +110,8 @@ namespace NeuralNets.NeuralNetworks
 
             }
 
+            outputError /= inputs.Length;
+
             UpdateWeights();
 
             return outputError;
@@ -149,7 +151,7 @@ namespace NeuralNets.NeuralNetworks
                 {
                     //= Layers[i].Item1.Transform(PartialD);
                     float actPrime = layerDerivatives[i](ins[i][k]);
-                    float error = Layers[i + 1].Item1.GetColumnAsMatrix(k).Transform(Error).Sum();
+                    float error = Layers[i + 1].Item1.GetColumnAsMatrix(k + 1)/*Added the plus-one to avoid including the bias*/.Transform(Error).Sum();
                     PartialDerivatives[i][k] = actPrime * error;
                 }
             }
