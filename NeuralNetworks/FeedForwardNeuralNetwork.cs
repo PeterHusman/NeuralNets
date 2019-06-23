@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
 
 namespace NeuralNets.NeuralNetworks
 {
@@ -138,12 +139,11 @@ namespace NeuralNets.NeuralNetworks
                 PartialDerivatives[Layers.Length - 1][i] = layerDerivatives[Layers.Length - 1](ins[Layers.Length - 1][i]) * errors[i];
             }
 
-
             for (int i = Layers.Length - 2; i >= 0; i--)
             {
                 float Error(int row, int column, float value)
                 {
-                    return PartialDerivatives[i + 1][row] * value;
+                    return /*row + 1 >= PartialDerivatives[i+1].Length - 1 ? 0 : */PartialDerivatives[i + 1][row] * value;
                 }
 
                 PartialDerivatives[i] = new float[Layers[i].Item1.Rows];
