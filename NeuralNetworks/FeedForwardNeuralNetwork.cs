@@ -101,10 +101,11 @@ namespace NeuralNets.NeuralNetworks
             {
                 Inputs = new Matrix[Layers.Length];
                 Outputs = new Matrix[Layers.Length];
-                Matrix errors = (Matrix)ComputeBatchWithRecords(new[] { inputs[j] }) - new[] { desiredOutputs[j] };
-                outputError += (errors).Sum(a => Math.Abs(a)) / (desiredOutputs[j].Length);
+                Matrix outputs = (Matrix)ComputeBatchWithRecords(new[] { inputs[j] });
 
-                FindDerivatives(layerDerivatives, errors.GetColumn(0), Inputs.Select(a => a.GetColumn(0)/*.ToArray()*/).ToArray()/*The jth column of each*/);
+                var eachInput = Inputs.Select(a => a.Values[0]).ToArray();
+
+                FindDerivatives(layerDerivatives, outputs.Values[0], desiredOutputs[j], eachInput, ref outputError);
 
 
                 FindUpdates(inputs, learningRate);
@@ -130,13 +131,25 @@ namespace NeuralNets.NeuralNetworks
             }
         }
 
-        private void FindDerivatives(Func<float, float>[] layerDerivatives, float[] errors, float[][] ins)
+        private void FindDerivatives(Func<float, float>[] layerDerivatives, float[] outputs, float[] targetOutputs, float[][] ins, ref float outputError)
         {
+            float[] errors = new float[outputs.Length];
+
+            float toAdd = 0;
+
+            for(int i = 0; i < errors.Length; i++)
+            {
+                errors[i] = targetOutputs[i] - outputs[i];
+                toAdd += Math.Abs(errors[i]);
+            }
+            toAdd /= errors.Length;
+            outputError += toAdd;
+
             PartialDerivatives[Layers.Length - 1] = new float[Layers.Last().Item1.Rows];
             for (int i = 0; i < PartialDerivatives[Layers.Length - 1].Length; i++)
             {
                 //Layers.Last().Item1.Transform((r, c, v) => layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1].GetColumn(j)[r]) * errors[r,j]);//errors.Transform((r, c, v) => layerDerivatives[Layers.Length - 1](Inputs[Layers.Length - 1][r, c]) * v);
-                PartialDerivatives[Layers.Length - 1][i] = layerDerivatives[Layers.Length - 1](ins[Layers.Length - 1][i]) * errors[i];
+                PartialDerivatives[Layers.Length - 1][i] = layerDerivatives.Last()(ins[Layers.Length - 1][i]) * errors[i];
             }
 
             for (int i = Layers.Length - 2; i >= 0; i--)

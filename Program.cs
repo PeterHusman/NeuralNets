@@ -81,17 +81,23 @@ namespace NeuralNets
             Random rand = new Random();
             var net = NeuralNetworkFactory.CreateRandomizedFeedForwardNeuralNetwork(rand, 2, (2, ActivationFunctions.Sigmoid), (4, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
             int n = 50;
-            float[][] inputs = new[] { /*new[] { 0f, 0f }, new[] { 0f, 1f },*/ new[] { 1f, 0f, }, new[] { 1f, 1f } };//new float[n][];
-            float[][] outputs = new[] { /*new[] { 0f }, new[] { 1f },*/ new[] { 1f }, new[] { 0f } };//new float[n][];
+            float[][] inputs = new[] { new[] { 0f, 0f }, new[] { 0f, 1f }, new[] { 1f, 0f, }, new[] { 1f, 1f } };//new float[n][];
+            float[][] outputs = new[] { new[] { 0f }, new[] { 1f }, new[] { 1f }, new[] { 0f } };//new float[n][];
             /*for(int i = 0; i < inputs.Length; i++)
             {
                 inputs[i] = new float[] { i };
                 outputs[i] = new float[] { 2*i };
             }*/
             var a = NeuralNetworkFactory.GradientDescentTrainCoroutine(net, inputs, outputs, 0.01f, 0.01f);
-
+            int i = 0;
             foreach (var b in a)
             {
+                i++;
+                if(i < 300)
+                {
+                    continue;
+                }
+                i = 0;
                 Matrix input = new[] { new[] { 1f, 0f }, new[] { 1f, 1f } };
                 Matrix target = new [] { new float[] { 1f }, new float[] { 0f } };
                 Console.SetCursorPosition(0, 5);
