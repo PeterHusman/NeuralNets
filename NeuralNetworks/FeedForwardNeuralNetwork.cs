@@ -154,21 +154,31 @@ namespace NeuralNets.NeuralNetworks
 
             for (int i = Layers.Length - 2; i >= 0; i--)
             {
-                float Error(int row, int column, float value)
-                {
-                    return /*row + 1 >= PartialDerivatives[i+1].Length - 1 ? 0 : */PartialDerivatives[i + 1][row] * value;
-                }
+                Matrix layer = Layers[i].Item1;
+                PartialDerivatives[i] = new float[layer.Rows];
+                float[] theseDerivatives = PartialDerivatives[i];
+                Matrix nextLayer = Layers[i + 1].Item1;
+                float[] nextDerivatives = PartialDerivatives[i + 1];
 
-                PartialDerivatives[i] = new float[Layers[i].Item1.Rows];
-                for (int k = 0; k < PartialDerivatives[i].Length; k++)
+                PartialDerivatives[i] = new float[layer.Rows];
+                for (int k = 0; k < layer.Rows; k++)
                 {
-                    //= Layers[i].Item1.Transform(PartialD);
                     float actPrime = layerDerivatives[i](ins[i][k]);
-                    float error = Layers[i + 1].Item1.GetColumnAsMatrix(k + 1)/*Added the plus-one to avoid including the bias*/.Transform(Error).Sum();
-                    PartialDerivatives[i][k] = actPrime * error;
+                    float error = 0;
+
+                    float[] nextNeuronWeights = nextLayer.GetColumn(k + 1);
+                    for(int nextNeuron = 0; nextNeuron < nextLayer.Rows; nextNeuron++)
+                    {
+                        error += nextDerivatives[nextNeuron] * nextNeuronWeights[nextNeuron];
+                    }
+                    theseDerivatives[k] = actPrime * error;
                 }
             }
         }
+
+        private float[] GetWeights(Matrix layer, int neuronNum) => layer.GetRow(neuronNum).ToArray();
+
+
 
         private void ClearUpdates()
         {
@@ -211,7 +221,8 @@ namespace NeuralNets.NeuralNetworks
                 insWithBias[i][0] = 1;
                 inputs[i].CopyTo(insWithBias[i], 1);
             }
-            var weightedInputs = layerWeights * insWithBias;
+            Matrix insMatrix = insWithBias;
+            var weightedInputs = layerWeights * insMatrix;
             var outputs = weightedInputs.Values.Select(x => x.Select(activationFunction));
             if (outputs is float[][] arr)
             {
