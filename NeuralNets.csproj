@@ -52,9 +52,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NeuralNetworkFactory.cs" />
+    <Compile Include="NeuralNetworks\ActivationFunction.cs" />
     <Compile Include="NeuralNetworks\ActivationFunctions.cs" />
+    <Compile Include="NeuralNetworks\FeedForwardNetwork.cs" />
     <Compile Include="NeuralNetworks\FeedForwardNeuralNetwork.cs" />
     <Compile Include="Matrix.cs" />
+    <Compile Include="NeuralNetworks\Layer.cs" />
+    <Compile Include="NeuralNetworks\Neuron.cs" />
     <Compile Include="Perceptron.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

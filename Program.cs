@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NeuralNets.NeuralNetworks;
+using System.Linq;
 
 namespace NeuralNets
 {
@@ -79,15 +80,23 @@ namespace NeuralNets
         private static async Task GradientTest()
         {
             Random rand = new Random();
-            var net = NeuralNetworkFactory.CreateRandomizedFeedForwardNeuralNetwork(rand, 2, (2, ActivationFunctions.Sigmoid), (4, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
+            var net = new FeedForwardNetwork(2, (2, ActivationFunctions.Sigmoid), (4, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
+            net.Randomize(rand);
             int n = 50;
-            float[][] inputs = new[] { new[] { 0f, 0f }, new[] { 0f, 1f }/*, new[] { 1f, 0f, }, new[] { 1f, 1f }*/ };//new float[n][];
-            float[][] outputs = new[] { new[] { 0f }, new[] { 1f }/*, new[] { 1f }, new[] { 0f }*/ };//new float[n][];
-            /*for(int i = 0; i < inputs.Length; i++)
-            {
-                inputs[i] = new float[] { i };
-                outputs[i] = new float[] { 2*i };
+            double[][] inputs = new double[][] { new double[] { 0, 0 }, new double[] { 0, 1 }/*, new[] { 1f, 0f, }, new[] { 1f, 1f }*/ };//new float[n][];
+            double[][] outputs = new double[][] { new double[] { 0 }, new double [] { 1 }/*, new[] { 1f }, new[] { 0f }*/ };//new float[n][];
+                                                                                                                            /*for(int i = 0; i < inputs.Length; i++)
+                                                                                                                            {
+                                                                                                                                inputs[i] = new float[] { i };
+                                                                                                                                outputs[i] = new float[] { 2*i };
+                  
             }*/
+            double error = 1;
+            while(error >= 0.01)
+            {
+                error = net.GradientDescent(inputs, outputs, 0.01);
+            }
+#if false
             var a = NeuralNetworkFactory.GradientDescentTrainCoroutine(net, inputs, outputs, 0.01f, 0.01f);
             int i = 0;
             foreach (var b in a)
@@ -136,11 +145,12 @@ namespace NeuralNets
                 }
                 //Console.WriteLine("     ");
             }
+#endif
 
             Console.WriteLine();
             while (true)
             {
-                Console.WriteLine(net.Compute(CHelper.RequestInput(@"Input the, well, inputs.", true, ConsoleColor.DarkYellow, ConsoleColor.Gray).Split(' ').ToFloats())[0]);
+                Console.WriteLine(net.Compute(CHelper.RequestInput(@"Input the, well, inputs.", true, ConsoleColor.DarkYellow, ConsoleColor.Gray).Split(' ').Select(abc => double.Parse(abc)).ToArray())[0]);
             }
         }
 

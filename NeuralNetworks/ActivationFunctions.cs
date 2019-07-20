@@ -10,56 +10,66 @@ namespace NeuralNets.NeuralNetworks
     {
         public static Dictionary<Func<float, float>, Func<float, float>> DefaultFunctionData
         {
-            get => new Dictionary<Func<float, float>, Func<float, float>> { [Sigmoid] = SigmoidDerivative, [ReLU] = ReLUDerivative, [BinaryStep] = BinaryStepDerivative, [SoftPlus] = SoftPlusDerivative, [Identity] = IdentityDerivative };
+            get => new Dictionary<Func<float, float>, Func<float, float>>();// { [Sigmoid] = SigmoidDerivative, [ReLU] = ReLUDerivative, [BinaryStep] = BinaryStepDerivative, [SoftPlus] = SoftPlusDerivative, [Identity] = IdentityDerivative };
         }
 
-        public static float ReLU(float input)
+        public static ActivationFunction ReLU = new ActivationFunction(ReLUFunc, ReLUDerivative);
+
+        public static ActivationFunction BinaryStep = new ActivationFunction(BinaryStepFunc, BinaryStepDerivative);
+
+        public static ActivationFunction SoftPlus = new ActivationFunction(SoftPlusFunc, SoftPlusDerivative);
+
+        public static ActivationFunction Sigmoid = new ActivationFunction(SigmoidFunc, SigmoidDerivative);
+
+        public static ActivationFunction Identity = new ActivationFunction(IdentityFunc, IdentityDerivative);
+
+        private static double ReLUFunc(double input)
         {
             return input < 0 ? 0 : input;
         }
 
-        public static float ReLUDerivative(float input)
+        private static double ReLUDerivative(double input)
         {
             return input < 0 ? 0 : 1;
         }
 
-        public static float BinaryStep(float input)
+        private static double BinaryStepFunc(double input)
         {
             return input < 0 ? 0 : 1;
         }
         
-        public static float BinaryStepDerivative(float input)
+        private static double BinaryStepDerivative(double input)
         {
             return 0;
         }
 
-        public static float SoftPlus(float input)
+        private static double SoftPlusFunc(double input)
         {
-            return (float)Math.Log(1 + Math.Exp(input));
+            return Math.Log(1 + Math.Exp(input));
         }
 
-        public static float SoftPlusDerivative(float input)
+        private static double SoftPlusDerivative(double input)
         {
-            return 1 / (1 + (float)Math.Exp(-input));
+            return 1 / (1 + Math.Exp(-input));
         }
 
-        public static float Sigmoid(float input)
+        private static double SigmoidFunc(double input)
         {
-            return 1 / (1 + (float)Math.Exp(-input));
+            return 1 / (1 + Math.Exp(-input));
         }
 
-        public static float SigmoidDerivative(float input)
+        private static double SigmoidDerivative(double input)
         {
-            float output = Sigmoid(input);
+            double output = SigmoidFunc(input);
             return output * (1 - output);
         }
 
-        public static float Identity(float input)
+        private static double IdentityFunc(double input)
         {
             return input;
         }
 
-        public static float IdentityDerivative(float input)
+        private static double IdentityDerivative(double input)
         {
             return 1;
         }
