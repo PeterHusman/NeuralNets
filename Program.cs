@@ -80,22 +80,83 @@ namespace NeuralNets
         private static async Task GradientTest()
         {
             Random rand = new Random();
-            var net = new FeedForwardNetwork(2, (2, ActivationFunctions.Sigmoid), (4, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
-            net.Randomize(rand);
-            int n = 50;
-            double[][] inputs = new double[][] { new double[] { 0, 0 }, new double[] { 0, 1 }/*, new[] { 1f, 0f, }, new[] { 1f, 1f }*/ };//new float[n][];
-            double[][] outputs = new double[][] { new double[] { 0 }, new double [] { 1 }/*, new[] { 1f }, new[] { 0f }*/ };//new float[n][];
-                                                                                                                            /*for(int i = 0; i < inputs.Length; i++)
-                                                                                                                            {
-                                                                                                                                inputs[i] = new float[] { i };
-                                                                                                                                outputs[i] = new float[] { 2*i };
-                  
-            }*/
-            double error = 1;
-            while(error >= 0.01)
+            FeedForwardNetwork net = null;
+            double[][] inputs = new double[0][];
+            double[][] outputs = new double[0][];
+            Console.WriteLine();
+            Console.Clear();
+            int selectedProblem = CHelper.SelectorMenu("Please select the problem.", new[] { "XOR", "Sine" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta);
+            switch (selectedProblem)
             {
-                error = net.GradientDescent(inputs, outputs, 0.01);
+                case 0:
+                    net = new FeedForwardNetwork(2, (2, ActivationFunctions.Sigmoid), (4, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
+                    inputs = new double[][] { new double[] { 0, 0 }, new double[] { 0, 1 }, new double[] { 1, 0, }, new double[] { 1, 1 } };
+                    outputs = new double[][] { new double[] { 0 }, new double[] { 1 }, new double[] { 1f }, new double[] { 0f } };
+                    break;
+                case 1:
+                    net = new FeedForwardNetwork(1, (10, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
+                    inputs = new double[100][];
+                    outputs = new double[100][];
+                    for (int i = 0; i < inputs.Length; i++)
+                    {
+                        inputs[i] = new[] { Math.PI * 2 * i / inputs.Length };
+                        outputs[i] = new[] { Math.Sin(inputs[i][0]) };
+                    }
+                    break;
             }
+
+            net.Randomize(rand);
+
+            double error = 1;
+
+            double threshold = 0.0001;
+
+            object locker = new object();
+
+            void UI()
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Training...\nMSE: ");
+
+                bool cond1 = true;
+
+                while (cond1)
+                {
+                    Console.SetCursorPosition(5, 1);
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+
+                    double copy;
+
+                    lock (locker)
+                    {
+                        copy = error;
+                    }
+                    cond1 = error >= threshold;
+
+                    Console.Write(copy);
+
+                }
+            }
+
+            Thread ui = new Thread(UI);
+            ui.Start();
+
+
+            bool cond2 = true;
+            while (cond2)
+            {
+
+                double dub = net.GradientDescent(inputs, outputs, 0.01, 0);
+                lock (locker)
+                {
+                    error = dub;
+                }
+                cond2 = dub >= threshold;
+
+            }
+
+            ui.Join();
 #if false
             var a = NeuralNetworkFactory.GradientDescentTrainCoroutine(net, inputs, outputs, 0.01f, 0.01f);
             int i = 0;

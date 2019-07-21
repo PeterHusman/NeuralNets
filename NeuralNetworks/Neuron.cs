@@ -11,7 +11,9 @@ namespace NeuralNets.NeuralNetworks
         public double Bias;
         public double[] Weights;
         public double[] WeightUpdates;
+        public double[] PrevWeightUpdates;
         public double BiasUpdate;
+        public double PrevBiasUpdate;
         public double Output;
         public double Input;
         public double PartialDerivative;
@@ -21,6 +23,7 @@ namespace NeuralNets.NeuralNetworks
         {
             Weights = new double[inputCount];
             WeightUpdates = new double[inputCount];
+            PrevWeightUpdates = new double[inputCount];
             ActivationFunction = actFunc;
         }
 

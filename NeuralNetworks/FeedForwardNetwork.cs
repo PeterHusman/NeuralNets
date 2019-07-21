@@ -57,7 +57,7 @@ namespace NeuralNets.NeuralNetworks
             return error;
         }
 
-        public double GradientDescent(double[][] inputs, double[][] desiredOutputs, double learningRate)
+        public double GradientDescent(double[][] inputs, double[][] desiredOutputs, double learningRate, double momentum)
         {
             double totalError = 0;
 
@@ -82,7 +82,7 @@ namespace NeuralNets.NeuralNetworks
 
                     double error = desiredOutputs[i][j] - neuron.Output;
 
-                    totalError += error;
+                    totalError += error * error;
 
                     neuron.PartialDerivative = error * neuron.ActivationFunction.Derivative(neuron.Input);
                 }
@@ -125,7 +125,7 @@ namespace NeuralNets.NeuralNetworks
 
                     for (int k = 0; k < layer.Neurons.Length; k++)
                     {
-                        Neuron neuron = layer.Neurons[j];
+                        Neuron neuron = layer.Neurons[k];
                         for (int l = 0; l < neuron.Weights.Length; l++)
                         {
                             neuron.WeightUpdates[l] += learningRate * neuron.PartialDerivative * prevLayer.Output[l];
@@ -143,9 +143,13 @@ namespace NeuralNets.NeuralNetworks
                 {
                     for(int k = 0; k < Layers[i].Neurons[j].Weights.Length; k++)
                     {
-                        Layers[i].Neurons[j].Weights[k] += Layers[i].Neurons[j].WeightUpdates[k];
+                        double update = Layers[i].Neurons[j].WeightUpdates[k] + (momentum * Layers[i].Neurons[j].PrevWeightUpdates[k]);
+                        Layers[i].Neurons[j].PrevWeightUpdates[k] = update;
+                        Layers[i].Neurons[j].Weights[k] += update;
                     }
-                    Layers[i].Neurons[j].Bias += Layers[i].Neurons[j].BiasUpdate;
+                    double upd = Layers[i].Neurons[j].BiasUpdate + (momentum * Layers[i].Neurons[j].PrevBiasUpdate);
+                    Layers[i].Neurons[j].Bias += upd;
+                    Layers[i].Neurons[j].PrevBiasUpdate = upd;
                 }
             }
 
