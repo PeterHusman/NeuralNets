@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NeuralNets.NeuralNetworks;
 using System.Linq;
+using System.ComponentModel;
 
 namespace NeuralNets
 {
@@ -94,7 +95,7 @@ namespace NeuralNets
                     outputs = new double[][] { new double[] { 0 }, new double[] { 1 }, new double[] { 1f }, new double[] { 0f } };
                     break;
                 case 1:
-                    net = new FeedForwardNetwork(1, (10, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
+                    net = new FeedForwardNetwork(1, (25, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
                     inputs = new double[100][];
                     outputs = new double[100][];
                     for (int i = 0; i < inputs.Length; i++)
@@ -111,52 +112,118 @@ namespace NeuralNets
 
             double threshold = 0.0001;
 
+            double[][] realOuts = outputs;
+
             object locker = new object();
 
-            void UI()
+            object locker2 = new object();
+
+            void Descent(/*object sender, DoWorkEventArgs e*/)
             {
-                Console.Clear();
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Training...\nMSE: ");
-
-                bool cond1 = true;
-
-                while (cond1)
+                bool cond2 = true;
+                while (cond2)
                 {
-                    Console.SetCursorPosition(5, 1);
-                    Console.ForegroundColor = ConsoleColor.Yellow;
 
-                    double copy;
-
+                    double dub;
+                    lock (locker2)
+                    {
+                        dub = net.GradientDescent(inputs, outputs, 0.01, 0, out realOuts);
+                    }
                     lock (locker)
                     {
-                        copy = error;
+                        error = dub;
                     }
-                    cond1 = error >= threshold;
-
-                    Console.Write(copy);
+                    cond2 = dub >= threshold;
 
                 }
             }
 
-            Thread ui = new Thread(UI);
-            ui.Start();
+            double[][] dubs = outputs;
 
-
-            bool cond2 = true;
-            while (cond2)
+            void Descend(object sender, DoWorkEventArgs e)
             {
+                e.Result = net.GradientDescent(inputs, outputs, 0.03, 0.3, out dubs);
+            }
 
-                double dub = net.GradientDescent(inputs, outputs, 0.01, 0);
+            //Thread train = new Thread(Descent);
+
+            BackgroundWorker backgroundWorker = new BackgroundWorker();
+            backgroundWorker.WorkerSupportsCancellation = true;
+            backgroundWorker.DoWork += Descend;
+            backgroundWorker.RunWorkerCompleted += (a, b) => { lock (locker) { error = (double)b.Result; realOuts = dubs; } if (!b.Cancelled) { backgroundWorker.RunWorkerAsync(); } };
+            backgroundWorker.RunWorkerAsync();
+
+            //train.Start();
+
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("Training...\nMSE: ");
+
+            bool cond1 = true;
+
+            while (cond1 && !Console.KeyAvailable)
+            {
+                Console.SetCursorPosition(5, 1);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+
+                double copy;
+                double[][] copyOuts;
+
                 lock (locker)
                 {
-                    error = dub;
+                    copy = error;
+                    copyOuts = realOuts;
                 }
-                cond2 = dub >= threshold;
+                cond1 = copy >= threshold;
 
+                Console.Write(copy);
+
+                if (selectedProblem == 1)
+                {
+
+                    Console.WriteLine();
+                    Console.WriteLine();
+
+                    double[] vals = new double[50];
+                    double[] targetOuts = new double[vals.Length];
+                    for (int i = 0; i < vals.Length; i++)
+                    {
+                        int scaledInd = i * 2;
+                        vals[i] = copyOuts[scaledInd][0];
+                        targetOuts[i] = outputs[scaledInd][0];
+                    }
+
+                    int verticalSubdivisions = 12;
+                    double step = 2f / verticalSubdivisions;
+
+                    for (int i = verticalSubdivisions; i >= 0; i--)
+                    {
+                        for (int j = 0; j < vals.Length; j++)
+                        {
+                            double lower = step * i - 1;
+                            double upper = lower + step;
+                            if (vals[j] >= lower && vals[j] <= upper)
+                            {
+                                Console.BackgroundColor = ConsoleColor.Yellow;
+                            }
+                            else if (targetOuts[j] >= lower && targetOuts[j] <= upper)
+                            {
+                                Console.BackgroundColor = ConsoleColor.Red;
+                            }
+                            else
+                            {
+                                Console.BackgroundColor = ConsoleColor.Black;
+                            }
+                            Console.Write(' ');
+                        }
+                        Console.WriteLine();
+                    }
+                }
             }
 
-            ui.Join();
+            backgroundWorker.CancelAsync();
+
+            //train.Join();
 #if false
             var a = NeuralNetworkFactory.GradientDescentTrainCoroutine(net, inputs, outputs, 0.01f, 0.01f);
             int i = 0;

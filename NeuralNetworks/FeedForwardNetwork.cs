@@ -57,9 +57,11 @@ namespace NeuralNets.NeuralNetworks
             return error;
         }
 
-        public double GradientDescent(double[][] inputs, double[][] desiredOutputs, double learningRate, double momentum)
+        public double GradientDescent(double[][] inputs, double[][] desiredOutputs, double learningRate, double momentum, out double[][] actualOutputs)
         {
             double totalError = 0;
+
+            actualOutputs = new double[desiredOutputs.Length][];
 
             foreach(Layer layer in Layers)
             {
@@ -74,11 +76,15 @@ namespace NeuralNets.NeuralNetworks
             {
                 Compute(inputs[i]);
 
+                actualOutputs[i] = new double[desiredOutputs.Length];
+
                 Layer outputLayer = Layers[Layers.Length - 1];
 
                 for(int j = 0; j < outputLayer.Neurons.Length; j++)
                 {
                     Neuron neuron = outputLayer.Neurons[j];
+
+                    actualOutputs[i][j] = neuron.Output;
 
                     double error = desiredOutputs[i][j] - neuron.Output;
 
