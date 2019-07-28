@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using NeuralNets.NeuralNetworks;
 using System.Linq;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace NeuralNets
 {
@@ -18,6 +20,23 @@ namespace NeuralNets
         static Func<float, float> bin = a => a > 0 ? 1 : 0;
         private static async Task Main(string[] args)
         {
+            //Modifying string!
+            /*void LocalFunc()
+            {
+                ReadOnlySpan<char> stringSpan = "Hello World!".AsSpan();
+                
+                ref char c = ref MemoryMarshal.GetReference(stringSpan);
+                for (int i = 0; i < 5; i++) {
+                    ref char b = ref Unsafe.Add(ref c, i);
+                    b = (char)((int)'a' + i);
+                }
+            }
+
+
+            LocalFunc();*/
+
+
+
             int timeWasted = 0;
             string[] timeWastedStrings = { "Please make a selection.", "Really? I don't have all day.", "Seriously?!?", "I've had enough..." };
             while (true)
@@ -27,7 +46,7 @@ namespace NeuralNets
                 var waitTask = Task.Delay(5000, token);
                 int selection = -1;
 
-                Task<int> chooseTask = Task.Run(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron", "XORNet - Random Train", "Gradient Descent" },
+                Task<int> chooseTask = Task.Run(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron", "XORNet - Random Train", "Gradient Descent", "Genetic Algorithm" },
                     true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta, token), token);
                 //waitTask.Start();
                 //chooseTask.Start();
@@ -78,13 +97,36 @@ namespace NeuralNets
             }
         }
 
+        private static async Task GeneticAlgorithm()
+        {
+            Random rand = new Random();
+            (FeedForwardNetwork net, double fitness)[] population = new (FeedForwardNetwork, double)[100];
+            Console.Clear();
+
+            int selectedProblem = CHelper.SelectorMenu("Please select the problem.", new[] { "Sine" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta);
+
+            switch (selectedProblem)
+            {
+                case 0:
+                    for (int i = 0; i < population.Length; i++)
+                    {
+                        population[i] = (new FeedForwardNetwork(2, (2, ActivationFunctions.BinaryStep), (4, ActivationFunctions.BinaryStep), (1, ActivationFunctions.BinaryStep)), 0);
+                        population[i].net.Randomize(rand);
+                    }
+                    break;
+            }
+
+            
+
+        }
+
+
         private static async Task GradientTest()
         {
             Random rand = new Random();
             FeedForwardNetwork net = null;
             double[][] inputs = new double[0][];
             double[][] outputs = new double[0][];
-            Console.WriteLine();
             Console.Clear();
             int selectedProblem = CHelper.SelectorMenu("Please select the problem.", new[] { "XOR", "Sine" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta);
             switch (selectedProblem)
@@ -95,7 +137,7 @@ namespace NeuralNets
                     outputs = new double[][] { new double[] { 0 }, new double[] { 1 }, new double[] { 1f }, new double[] { 0f } };
                     break;
                 case 1:
-                    net = new FeedForwardNetwork(1, (25, ActivationFunctions.Sigmoid), (1, ActivationFunctions.Sigmoid));
+                    net = new FeedForwardNetwork(1, (5, ActivationFunctions.TanH), (1, ActivationFunctions.TanH));
                     inputs = new double[100][];
                     outputs = new double[100][];
                     for (int i = 0; i < inputs.Length; i++)
@@ -114,44 +156,13 @@ namespace NeuralNets
 
             double[][] realOuts = outputs;
 
-            object locker = new object();
-
-            object locker2 = new object();
-
-            void Descent(/*object sender, DoWorkEventArgs e*/)
-            {
-                bool cond2 = true;
-                while (cond2)
-                {
-
-                    double dub;
-                    lock (locker2)
-                    {
-                        dub = net.GradientDescent(inputs, outputs, 0.01, 0, out realOuts);
-                    }
-                    lock (locker)
-                    {
-                        error = dub;
-                    }
-                    cond2 = dub >= threshold;
-
-                }
-            }
-
-            double[][] dubs = outputs;
-
-            void Descend(object sender, DoWorkEventArgs e)
-            {
-                e.Result = net.GradientDescent(inputs, outputs, 0.03, 0.3, out dubs);
-            }
-
             //Thread train = new Thread(Descent);
 
-            BackgroundWorker backgroundWorker = new BackgroundWorker();
-            backgroundWorker.WorkerSupportsCancellation = true;
-            backgroundWorker.DoWork += Descend;
-            backgroundWorker.RunWorkerCompleted += (a, b) => { lock (locker) { error = (double)b.Result; realOuts = dubs; } if (!b.Cancelled) { backgroundWorker.RunWorkerAsync(); } };
-            backgroundWorker.RunWorkerAsync();
+            //BackgroundWorker backgroundWorker = new BackgroundWorker();
+            //backgroundWorker.WorkerSupportsCancellation = true;
+            //backgroundWorker.DoWork += Descend;
+            //backgroundWorker.RunWorkerCompleted += (a, b) => { lock (locker) { error = (double)b.Result; realOuts = dubs; } if (!b.Cancelled) { backgroundWorker.RunWorkerAsync(); } };
+            //backgroundWorker.RunWorkerAsync();
 
             //train.Start();
 
@@ -160,23 +171,26 @@ namespace NeuralNets
             Console.WriteLine("Training...\nMSE: ");
 
             bool cond1 = true;
+            int a = 0;
 
             while (cond1 && !Console.KeyAvailable)
             {
+                error = net.GradientDescent(inputs, outputs, 0.01, 0.2, out realOuts);
+
+                if (a < 500)
+                {
+                    a++;
+                    continue;
+                }
+
+                a = 0;
+
                 Console.SetCursorPosition(5, 1);
                 Console.ForegroundColor = ConsoleColor.Yellow;
 
-                double copy;
-                double[][] copyOuts;
+                cond1 = error >= threshold;
 
-                lock (locker)
-                {
-                    copy = error;
-                    copyOuts = realOuts;
-                }
-                cond1 = copy >= threshold;
-
-                Console.Write(copy);
+                Console.Write(error);
 
                 if (selectedProblem == 1)
                 {
@@ -184,16 +198,16 @@ namespace NeuralNets
                     Console.WriteLine();
                     Console.WriteLine();
 
-                    double[] vals = new double[50];
+                    double[] vals = new double[100];
                     double[] targetOuts = new double[vals.Length];
                     for (int i = 0; i < vals.Length; i++)
                     {
-                        int scaledInd = i * 2;
-                        vals[i] = copyOuts[scaledInd][0];
+                        int scaledInd = i * 1;
+                        vals[i] = realOuts[scaledInd][0];
                         targetOuts[i] = outputs[scaledInd][0];
                     }
 
-                    int verticalSubdivisions = 12;
+                    int verticalSubdivisions = 30;
                     double step = 2f / verticalSubdivisions;
 
                     for (int i = verticalSubdivisions; i >= 0; i--)
@@ -221,7 +235,7 @@ namespace NeuralNets
                 }
             }
 
-            backgroundWorker.CancelAsync();
+            //backgroundWorker.CancelAsync();
 
             //train.Join();
 #if false

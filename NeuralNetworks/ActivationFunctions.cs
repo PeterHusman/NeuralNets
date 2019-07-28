@@ -13,6 +13,8 @@ namespace NeuralNets.NeuralNetworks
             get => new Dictionary<Func<float, float>, Func<float, float>>();// { [Sigmoid] = SigmoidDerivative, [ReLU] = ReLUDerivative, [BinaryStep] = BinaryStepDerivative, [SoftPlus] = SoftPlusDerivative, [Identity] = IdentityDerivative };
         }
 
+        public static ActivationFunction TanH = new ActivationFunction(Math.Tanh, TanHDerivative);
+
         public static ActivationFunction ReLU = new ActivationFunction(ReLUFunc, ReLUDerivative);
 
         public static ActivationFunction BinaryStep = new ActivationFunction(BinaryStepFunc, BinaryStepDerivative);
@@ -22,6 +24,12 @@ namespace NeuralNets.NeuralNetworks
         public static ActivationFunction Sigmoid = new ActivationFunction(SigmoidFunc, SigmoidDerivative);
 
         public static ActivationFunction Identity = new ActivationFunction(IdentityFunc, IdentityDerivative);
+
+        private static double TanHDerivative(double input)
+        {
+            double d = Math.Tanh(input);
+            return 1 - (d * d);
+        }
 
         private static double ReLUFunc(double input)
         {
