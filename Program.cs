@@ -10,6 +10,7 @@ using System.Linq;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+using UnderEngine;
 
 namespace NeuralNets
 {
@@ -87,6 +88,9 @@ namespace NeuralNets
                     case 3:
                         await GradientTest();
                         break;
+                    case 4:
+                        await GeneticAlgorithm();
+                        break;
                 }
                 //waitTask.Dispose();
                 //chooseTask.Dispose();
@@ -103,7 +107,7 @@ namespace NeuralNets
             (FeedForwardNetwork net, double fitness)[] population = new (FeedForwardNetwork, double)[100];
             Console.Clear();
 
-            int selectedProblem = CHelper.SelectorMenu("Please select the problem.", new[] { "Sine" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta);
+            int selectedProblem = CHelper.SelectorMenu("Please select the problem.", new[] { "Flappy Bird" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta);
 
             switch (selectedProblem)
             {
@@ -116,7 +120,125 @@ namespace NeuralNets
                     break;
             }
 
-            
+            while (true)
+            {
+                World world = new World(24, 30, 30);
+
+                Pipe[] pipes = new Pipe[6];
+
+                world.Objects = new ObjectBase[population.Length + pipes.Length];
+
+                Bird[] birds = new Bird[population.Length];
+                HashSet<Bird> flappingBirds = new HashSet<Bird>();
+                Random random = new Random(0);
+
+                for (int i = 0; i < birds.Length; i++)
+                {
+                    birds[i] = new Bird();
+                    world.Objects[i] = birds[i];
+                    flappingBirds.Add(birds[i]);
+                }
+
+
+
+                for (int i = 0; i < pipes.Length; i++)
+                {
+                    int y = (i & 1) == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(3, 7)) : 0;
+                    int height = y == 0 ? random.Next(4, 10) : (20 - y);
+                    pipes[i] = new Pipe(12 + ((i / 2) * 8), y, height);
+                    world.Objects[i + birds.Length] = pipes[i];
+                }
+
+                world.SetupObjects();
+
+                Console.BackgroundColor = ConsoleColor.Black;
+
+                Console.Clear();
+
+                int pos = 0;
+
+                while (flappingBirds.Count >= 1)
+                {
+                    pos++;
+                    /*for(int i = 0; i < world.Width; i++)
+                    {
+                        for(int j = 0; j < world.Height; j++)
+                        {
+                            world.ScreenBuffer[i, j] = ConsoleColor.Black;
+                        }
+                    }
+                    Console.BackgroundColor = ConsoleColor.Black;
+                    Console.Clear();*/
+                    world.UpdateAndDraw();
+                    //Console.SetCursorPosition(0, 0);
+
+                    bool clear = false;
+
+                    for (int i = 0; i < birds.Length; i++)
+                    {
+                        if (!flappingBirds.Contains(birds[i]))
+                        {
+                            continue;
+                        }
+                        if (birds[i].Position.Y >= 20 || birds[i].Position.Y <= 1)
+                        {
+                            flappingBirds.Remove(birds[i]);
+                            birds[i].Enabled = false;
+                            population[i].fitness = pos;
+                            world.MarkDirty(birds[i].Position);
+                            clear = true;
+                            continue;
+                        }
+                        int nearestPipeX = 100;
+                        int nearestGapY = 100;
+                        bool valid = true;
+                        for (int j = 0; j < pipes.Length; j++)
+                        {
+                            if (pipes[j].HitBox.Intersects(birds[i].HitBox))
+                            {
+                                flappingBirds.Remove(birds[i]);
+                                birds[i].Enabled = false;
+                                population[i].fitness = pos;
+                                world.MarkDirty(birds[i].Position);
+                                valid = false;
+                                clear = true;
+                                break;
+                            }
+
+                            if (pipes[j].Position.X <= nearestPipeX + 1)
+                            {
+                                nearestPipeX = (int)pipes[j].Position.X;
+                                nearestGapY = pipes[j].Position.Y == 0 ? nearestGapY : (int)pipes[j].Position.Y;
+                            }
+                        }
+
+                        if (valid && population[i].net.Compute(new double[] { nearestPipeX - birds[i].Position.X, nearestGapY - birds[i].Position.Y })[0] >= 1)
+                        {
+                            birds[i].Velocity.Y = -10;
+                        }
+                    }
+
+                    int formerMostX = (int)pipes.Max(a => a.Position.X);
+
+                    for (int i = 0; i < pipes.Length; i++)
+                    {
+                        if (pipes[i].Position.X <= 3)
+                        {
+                            int y = (i & 1) == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(3, 7)) : 0;
+                            int height = y == 0 ? random.Next(4, 10) : (20 - y);
+                            pipes[i] = new Pipe(formerMostX + 8, y, height);
+                            world.Objects[i + birds.Length] = pipes[i];
+                        }
+                    }
+
+                    /*if(clear)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Black;
+                        Console.Clear();
+                    }*/
+                }
+                NeuralNetworkFactory.TrainGenetic(population, rand, 0.1f);
+            }
 
         }
 

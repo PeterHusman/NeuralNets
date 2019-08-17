@@ -63,8 +63,13 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="UnderEngine, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\ConsoleGames\Console48\UnderEngine\bin\Debug\UnderEngine.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bird.cs" />
     <Compile Include="NeuralNetworkFactory.cs" />
     <Compile Include="NeuralNetworks\ActivationFunction.cs" />
     <Compile Include="NeuralNetworks\ActivationFunctions.cs" />
@@ -74,6 +79,7 @@
     <Compile Include="NeuralNetworks\Layer.cs" />
     <Compile Include="NeuralNetworks\Neuron.cs" />
     <Compile Include="Perceptron.cs" />
+    <Compile Include="Pipe.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
