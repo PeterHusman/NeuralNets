@@ -32,14 +32,20 @@ namespace NeuralNets
         {
             foreach(Layer layer in network.Layers)
             {
-                foreach(Neuron neuron in layer.Neurons)
+                foreach (Neuron neuron in layer.Neurons)
                 {
-                    for(int i = 0; i < neuron.Weights.Length; i++)
+                    for (int i = 0; i < neuron.Weights.Length; i++)
                     {
-                        neuron.Weights[i] += random.NextDouble() * 2 - 1;
+                        if (random.NextDouble() < mutationRate)
+                        {
+                            neuron.Weights[i] += random.NextDouble() * 2 - 1;
+                        }
                     }
 
-                    neuron.Bias += random.NextDouble() * 2 - 1;
+                    if (random.NextDouble() < mutationRate)
+                    {
+                        neuron.Bias += random.NextDouble() * 2 - 1;
+                    }
                 }
             }
         }

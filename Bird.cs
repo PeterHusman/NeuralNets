@@ -11,7 +11,7 @@ namespace NeuralNets
     {
         public override ConsoleColor GetColor(Vector2 absolutePos)
         {
-            return ConsoleColor.Red;
+            return HitBox.Enabled ? ConsoleColor.Red : ConsoleColor.Black;
         }
 
         public Bird() : base()

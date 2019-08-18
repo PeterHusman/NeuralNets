@@ -103,6 +103,8 @@ namespace NeuralNets
 
         private static async Task GeneticAlgorithm()
         {
+            int popSize = 100;
+
             Random rand = new Random();
             (FeedForwardNetwork net, double fitness)[] population = new (FeedForwardNetwork, double)[100];
             Console.Clear();
@@ -120,9 +122,31 @@ namespace NeuralNets
                     break;
             }
 
+            int updatesPerUpdate = 100;
+
+            TimeSpan time = TimeSpan.FromMilliseconds(16);
+            int gen = 0;
+            int seed = 0;
+
+            int pipeDistance = 10;
+
+            int score = 0;
+
             while (true)
             {
-                World world = new World(24, 30, 30);
+                gen++;
+
+                if (Console.KeyAvailable)
+                {
+                    Console.ReadKey(true);
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.BackgroundColor = ConsoleColor.Black;
+                    Console.Clear();
+                    Console.Write($"Gen:\t\t\t{gen}\nUpdates survived:\t{population[0].fitness}\nSim time survived:\t{TimeSpan.FromTicks((long)(population[0].fitness * time.Ticks))}\nScore:\t\t\t{score}");
+                }
+                World world = new World(2, 30, 30, false);
+
+                //Console.BufferWidth = Console.WindowWidth = 50;
 
                 Pipe[] pipes = new Pipe[6];
 
@@ -130,7 +154,7 @@ namespace NeuralNets
 
                 Bird[] birds = new Bird[population.Length];
                 HashSet<Bird> flappingBirds = new HashSet<Bird>();
-                Random random = new Random(0);
+                Random random = new Random(seed);
 
                 for (int i = 0; i < birds.Length; i++)
                 {
@@ -145,7 +169,7 @@ namespace NeuralNets
                 {
                     int y = (i & 1) == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(3, 7)) : 0;
                     int height = y == 0 ? random.Next(4, 10) : (20 - y);
-                    pipes[i] = new Pipe(12 + ((i / 2) * 8), y, height);
+                    pipes[i] = new Pipe(12 + ((i / 2) * pipeDistance), y, height);
                     world.Objects[i + birds.Length] = pipes[i];
                 }
 
@@ -153,13 +177,15 @@ namespace NeuralNets
 
                 Console.BackgroundColor = ConsoleColor.Black;
 
-                Console.Clear();
+                score = 0;
+
+                //Console.Clear();
 
                 int pos = 0;
 
                 while (flappingBirds.Count >= 1)
                 {
-                    pos++;
+                    //pos++;
                     /*for(int i = 0; i < world.Width; i++)
                     {
                         for(int j = 0; j < world.Height; j++)
@@ -169,67 +195,73 @@ namespace NeuralNets
                     }
                     Console.BackgroundColor = ConsoleColor.Black;
                     Console.Clear();*/
-                    world.UpdateAndDraw();
-                    //Console.SetCursorPosition(0, 0);
 
-                    bool clear = false;
+                    //world.Draw();
 
-                    for (int i = 0; i < birds.Length; i++)
+                    for (int k = 0; k < updatesPerUpdate; k++)
                     {
-                        if (!flappingBirds.Contains(birds[i]))
+                        pos++;
+                        world.Update(time);
+
+                        for (int i = 0; i < birds.Length; i++)
                         {
-                            continue;
-                        }
-                        if (birds[i].Position.Y >= 20 || birds[i].Position.Y <= 1)
-                        {
-                            flappingBirds.Remove(birds[i]);
-                            birds[i].Enabled = false;
-                            population[i].fitness = pos;
-                            world.MarkDirty(birds[i].Position);
-                            clear = true;
-                            continue;
-                        }
-                        int nearestPipeX = 100;
-                        int nearestGapY = 100;
-                        bool valid = true;
-                        for (int j = 0; j < pipes.Length; j++)
-                        {
-                            if (pipes[j].HitBox.Intersects(birds[i].HitBox))
+                            if (!flappingBirds.Contains(birds[i]))
+                            {
+                                continue;
+                            }
+                            if (birds[i].Position.Y >= 20 || birds[i].Position.Y <= 1)
                             {
                                 flappingBirds.Remove(birds[i]);
                                 birds[i].Enabled = false;
                                 population[i].fitness = pos;
                                 world.MarkDirty(birds[i].Position);
-                                valid = false;
-                                clear = true;
-                                break;
+                                continue;
                             }
-
-                            if (pipes[j].Position.X <= nearestPipeX + 1)
+                            int nearestPipeX = 100;
+                            int nearestGapY = 100;
+                            bool valid = true;
+                            for (int j = 0; j < pipes.Length; j++)
                             {
-                                nearestPipeX = (int)pipes[j].Position.X;
-                                nearestGapY = pipes[j].Position.Y == 0 ? nearestGapY : (int)pipes[j].Position.Y;
+                                if (pipes[j].HitBox.Intersects(birds[i].HitBox))
+                                {
+                                    flappingBirds.Remove(birds[i]);
+                                    birds[i].Enabled = false;
+                                    population[i].fitness = pos;
+                                    world.MarkDirty(birds[i].Position);
+                                    valid = false;
+                                    break;
+                                }
+
+                                if (pipes[j].Position.X <= nearestPipeX + 1)
+                                {
+                                    nearestPipeX = (int)pipes[j].Position.X;
+                                    nearestGapY = pipes[j].Position.Y == 0 ? nearestGapY : (int)pipes[j].Position.Y;
+                                }
+                            }
+
+                            if (valid && population[i].net.Compute(new double[] { nearestPipeX - birds[i].Position.X, nearestGapY - birds[i].Position.Y })[0] >= 1)
+                            {
+                                birds[i].Velocity.Y = -10;
                             }
                         }
 
-                        if (valid && population[i].net.Compute(new double[] { nearestPipeX - birds[i].Position.X, nearestGapY - birds[i].Position.Y })[0] >= 1)
+                        int formerMostX = (int)pipes.Max(a => a.Position.X);
+
+                        for (int i = 0; i < pipes.Length; i++)
                         {
-                            birds[i].Velocity.Y = -10;
+                            if (pipes[i].Position.X <= 3)
+                            {
+                                int odd = i & 1;
+                                score += odd;
+                                int y = odd == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(3, 7)) : 0;
+                                int height = y == 0 ? random.Next(4, 10) : (20 - y);
+                                pipes[i] = new Pipe(formerMostX + pipeDistance, y, height);
+                                world.Objects[i + birds.Length] = pipes[i];
+                            }
                         }
                     }
 
-                    int formerMostX = (int)pipes.Max(a => a.Position.X);
-
-                    for (int i = 0; i < pipes.Length; i++)
-                    {
-                        if (pipes[i].Position.X <= 3)
-                        {
-                            int y = (i & 1) == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(3, 7)) : 0;
-                            int height = y == 0 ? random.Next(4, 10) : (20 - y);
-                            pipes[i] = new Pipe(formerMostX + 8, y, height);
-                            world.Objects[i + birds.Length] = pipes[i];
-                        }
-                    }
+                    
 
                     /*if(clear)
                     {
