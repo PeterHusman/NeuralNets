@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using UnderEngine;
+using System.Diagnostics;
 
 namespace NeuralNets
 {
@@ -122,9 +123,8 @@ namespace NeuralNets
                     break;
             }
 
-            int updatesPerUpdate = 100;
-
-            TimeSpan time = TimeSpan.FromMilliseconds(16);
+            TimeSpan fxd = TimeSpan.FromMilliseconds(16);
+            TimeSpan time = fxd;
             int gen = 0;
             int seed = 0;
 
@@ -132,18 +132,48 @@ namespace NeuralNets
 
             int score = 0;
 
+            Stopwatch watch = new Stopwatch();
+
             while (true)
             {
                 gen++;
 
+                bool renderFrame = false;
+                bool showAll = false;
+
+                int onlyShow = 0;
+
                 if (Console.KeyAvailable)
                 {
-                    Console.ReadKey(true);
+                    ConsoleKeyInfo key = Console.ReadKey(true);
                     Console.ForegroundColor = ConsoleColor.White;
                     Console.BackgroundColor = ConsoleColor.Black;
                     Console.Clear();
-                    Console.Write($"Gen:\t\t\t{gen}\nUpdates survived:\t{population[0].fitness}\nSim time survived:\t{TimeSpan.FromTicks((long)(population[0].fitness * time.Ticks))}\nScore:\t\t\t{score}");
+
+                    if (key.Key == ConsoleKey.Spacebar)
+                    {
+                        Console.Write($"Gen:\t\t\t{gen}\nUpdates survived:\t{population[0].fitness}\nSim time survived:\t{TimeSpan.FromTicks((long)(population[0].fitness * time.Ticks))}\nScore:\t\t\t{score}");
+                    }
+                    else if (key.Key == ConsoleKey.V)
+                    {
+                        showAll = key.Modifiers.HasFlag(ConsoleModifiers.Shift);
+                        if (!showAll)
+                        {
+                            for (int i = 0; i < population.Length; i++)
+                            {
+                                if (population[i].fitness >= population[onlyShow].fitness)
+                                {
+                                    onlyShow = i;
+                                }
+                            }
+                        }
+                        renderFrame = true;
+                        gen--;
+                        watch.Restart();
+                        time = watch.Elapsed;
+                    }
                 }
+
                 World world = new World(2, 30, 30, false);
 
                 //Console.BufferWidth = Console.WindowWidth = 50;
@@ -197,71 +227,88 @@ namespace NeuralNets
                     Console.Clear();*/
 
                     //world.Draw();
-
-                    for (int k = 0; k < updatesPerUpdate; k++)
+                    pos++;
+                    if (renderFrame)
                     {
-                        pos++;
-                        world.Update(time);
+                        time = watch.Elapsed;
+                        watch.Restart();
+                    }
+                    world.Update(time);
+                    if (renderFrame)
+                    {
+                        world.Draw();
+                    }
 
-                        for (int i = 0; i < birds.Length; i++)
+                    for (int i = 0; i < birds.Length; i++)
+                    {
+                        if (!flappingBirds.Contains(birds[i]))
                         {
-                            if (!flappingBirds.Contains(birds[i]))
+                            continue;
+                        }
+                        if (birds[i].Position.Y >= 20 || birds[i].Position.Y <= 1)
+                        {
+                            flappingBirds.Remove(birds[i]);
+                            birds[i].Enabled = false;
+                            if (renderFrame)
                             {
-                                continue;
+                                world.MarkDirty(birds[i].Position);
                             }
-                            if (birds[i].Position.Y >= 20 || birds[i].Position.Y <= 1)
+                            else
+                            {
+                                population[i].fitness = pos;
+                            }
+                            continue;
+                        }
+                        int nearestPipeX = 100;
+                        int nearestGapY = 100;
+                        bool valid = true;
+                        for (int j = 0; j < pipes.Length; j++)
+                        {
+                            if (pipes[j].HitBox.Intersects(birds[i].HitBox))
                             {
                                 flappingBirds.Remove(birds[i]);
                                 birds[i].Enabled = false;
-                                population[i].fitness = pos;
-                                world.MarkDirty(birds[i].Position);
-                                continue;
-                            }
-                            int nearestPipeX = 100;
-                            int nearestGapY = 100;
-                            bool valid = true;
-                            for (int j = 0; j < pipes.Length; j++)
-                            {
-                                if (pipes[j].HitBox.Intersects(birds[i].HitBox))
+                                if (renderFrame)
                                 {
-                                    flappingBirds.Remove(birds[i]);
-                                    birds[i].Enabled = false;
-                                    population[i].fitness = pos;
                                     world.MarkDirty(birds[i].Position);
-                                    valid = false;
-                                    break;
                                 }
-
-                                if (pipes[j].Position.X <= nearestPipeX + 1)
+                                else
                                 {
-                                    nearestPipeX = (int)pipes[j].Position.X;
-                                    nearestGapY = pipes[j].Position.Y == 0 ? nearestGapY : (int)pipes[j].Position.Y;
+                                    population[i].fitness = pos;
                                 }
+                                valid = false;
+                                break;
                             }
 
-                            if (valid && population[i].net.Compute(new double[] { nearestPipeX - birds[i].Position.X, nearestGapY - birds[i].Position.Y })[0] >= 1)
+                            if (pipes[j].Position.X <= nearestPipeX + 1)
                             {
-                                birds[i].Velocity.Y = -10;
+                                nearestPipeX = (int)pipes[j].Position.X;
+                                nearestGapY = pipes[j].Position.Y == 0 ? nearestGapY : (int)pipes[j].Position.Y;
                             }
                         }
 
-                        int formerMostX = (int)pipes.Max(a => a.Position.X);
-
-                        for (int i = 0; i < pipes.Length; i++)
+                        if ((!renderFrame || showAll || i == onlyShow) && (valid && population[i].net.Compute(new double[] { nearestPipeX - birds[i].Position.X, nearestGapY - birds[i].Position.Y })[0] >= 1))
                         {
-                            if (pipes[i].Position.X <= 3)
-                            {
-                                int odd = i & 1;
-                                score += odd;
-                                int y = odd == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(3, 7)) : 0;
-                                int height = y == 0 ? random.Next(4, 10) : (20 - y);
-                                pipes[i] = new Pipe(formerMostX + pipeDistance, y, height);
-                                world.Objects[i + birds.Length] = pipes[i];
-                            }
+                            birds[i].Velocity.Y = -10;
                         }
                     }
 
-                    
+                    int formerMostX = (int)pipes.Max(a => a.Position.X);
+
+                    for (int i = 0; i < pipes.Length; i++)
+                    {
+                        if (pipes[i].Position.X <= 3)
+                        {
+                            int odd = i & 1;
+                            score += odd;
+                            int y = odd == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(3, 7)) : 0;
+                            int height = y == 0 ? random.Next(4, 10) : (20 - y);
+                            pipes[i] = new Pipe(formerMostX + pipeDistance, y, height);
+                            world.Objects[i + birds.Length] = pipes[i];
+                        }
+                    }
+
+
 
                     /*if(clear)
                     {
@@ -269,7 +316,15 @@ namespace NeuralNets
                         Console.Clear();
                     }*/
                 }
-                NeuralNetworkFactory.TrainGenetic(population, rand, 0.1f);
+
+                if (!renderFrame)
+                {
+                    NeuralNetworkFactory.TrainGenetic(population, rand, 0.1f);
+                }
+                else
+                {
+                    time = fxd;
+                }
             }
 
         }

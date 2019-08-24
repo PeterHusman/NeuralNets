@@ -16,7 +16,7 @@ namespace NeuralNets
 
         public Bird() : base()
         {
-            HitBox = new HitBox(5, 5, 1, 1);
+            HitBox = new HitBox(5, 8, 1, 1);
             Acceleration = new Vector2(0, 9.8f);
             Enabled = true;
         }
