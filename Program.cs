@@ -117,7 +117,7 @@ namespace NeuralNets
                 case 0:
                     for (int i = 0; i < population.Length; i++)
                     {
-                        population[i] = (new FeedForwardNetwork(2, (2, ActivationFunctions.BinaryStep), (4, ActivationFunctions.BinaryStep), (1, ActivationFunctions.BinaryStep)), 0);
+                        population[i] = (new FeedForwardNetwork(3, (3, ActivationFunctions.BinaryStep), (4, ActivationFunctions.BinaryStep), (1, ActivationFunctions.BinaryStep)), 0);
                         population[i].net.Randomize(rand);
                     }
                     break;
@@ -132,6 +132,10 @@ namespace NeuralNets
 
             int score = 0;
 
+            int bestScore = 0;
+
+            int stepTime = 16;
+
             Stopwatch watch = new Stopwatch();
 
             while (true)
@@ -142,6 +146,15 @@ namespace NeuralNets
                 bool showAll = false;
 
                 int onlyShow = 0;
+
+                if(score > bestScore)
+                {
+                    bestScore = score;
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.BackgroundColor = ConsoleColor.Black;
+                    Console.Clear();
+                    Console.Write($"Gen:\t\t\t{gen}\nUpdates survived:\t{population[0].fitness}\nSim time survived:\t{TimeSpan.FromTicks((long)(population[0].fitness * time.Ticks))}\nScore:\t\t\t{score}");
+                }
 
                 if (Console.KeyAvailable)
                 {
@@ -197,7 +210,7 @@ namespace NeuralNets
 
                 for (int i = 0; i < pipes.Length; i++)
                 {
-                    int y = (i & 1) == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(3, 7)) : 0;
+                    int y = (i & 1) == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(4, 7)) : 0;
                     int height = y == 0 ? random.Next(4, 10) : (20 - y);
                     pipes[i] = new Pipe(12 + ((i / 2) * pipeDistance), y, height);
                     world.Objects[i + birds.Length] = pipes[i];
@@ -230,8 +243,11 @@ namespace NeuralNets
                     pos++;
                     if (renderFrame)
                     {
-                        time = watch.Elapsed;
                         watch.Restart();
+                        while (watch.ElapsedMilliseconds < stepTime) { }
+                        time = fxd;//watch.Elapsed;
+                        //watch.Restart();
+
                     }
                     world.Update(time);
                     if (renderFrame)
@@ -287,7 +303,7 @@ namespace NeuralNets
                             }
                         }
 
-                        if ((!renderFrame || showAll || i == onlyShow) && (valid && population[i].net.Compute(new double[] { nearestPipeX - birds[i].Position.X, nearestGapY - birds[i].Position.Y })[0] >= 1))
+                        if ((!renderFrame || showAll || i == onlyShow) && (valid && population[i].net.Compute(new double[] { nearestPipeX - birds[i].Position.X, nearestGapY - birds[i].Position.Y, birds[i].Velocity.Y })[0] >= 1))
                         {
                             birds[i].Velocity.Y = -10;
                         }
@@ -301,10 +317,23 @@ namespace NeuralNets
                         {
                             int odd = i & 1;
                             score += odd;
-                            int y = odd == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(3, 7)) : 0;
+                            int y = odd == 1 ? (int)(pipes[i - 1].HitBox.Size.Y + random.Next(4, 7)) : 0;
                             int height = y == 0 ? random.Next(4, 10) : (20 - y);
                             pipes[i] = new Pipe(formerMostX + pipeDistance, y, height);
                             world.Objects[i + birds.Length] = pipes[i];
+                        }
+                    }
+
+                    if(Console.KeyAvailable)
+                    {
+                        var key = Console.ReadKey(true);
+                        if (key.Key == ConsoleKey.PageUp)
+                        {
+                            stepTime++;
+                        }
+                        else if(key.Key == ConsoleKey.PageDown)
+                        {
+                            stepTime = (stepTime > 0) ? (stepTime - 1) : 0;
                         }
                     }
 

@@ -1,0 +1,6 @@
+Flappy Bird High Score -- we had to end the program early (it NEVER DIED):
+
+score
+55406
+gen
+303
