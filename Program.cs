@@ -102,25 +102,12 @@ namespace NeuralNets
             }
         }
 
-        private static async Task GeneticAlgorithm()
+        private static async Task FlappyBird((FeedForwardNetwork net, double fitness)[] population, Random rand)
         {
-            int popSize = 100;
-
-            Random rand = new Random();
-            (FeedForwardNetwork net, double fitness)[] population = new (FeedForwardNetwork, double)[100];
-            Console.Clear();
-
-            int selectedProblem = CHelper.SelectorMenu("Please select the problem.", new[] { "Flappy Bird" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta);
-
-            switch (selectedProblem)
+            for (int i = 0; i < population.Length; i++)
             {
-                case 0:
-                    for (int i = 0; i < population.Length; i++)
-                    {
-                        population[i] = (new FeedForwardNetwork(3, (3, ActivationFunctions.BinaryStep), (4, ActivationFunctions.BinaryStep), (1, ActivationFunctions.BinaryStep)), 0);
-                        population[i].net.Randomize(rand);
-                    }
-                    break;
+                population[i] = (new FeedForwardNetwork(3, (3, ActivationFunctions.BinaryStep), (4, ActivationFunctions.BinaryStep), (1, ActivationFunctions.BinaryStep)), 0);
+                population[i].net.Randomize(rand);
             }
 
             TimeSpan fxd = TimeSpan.FromMilliseconds(16);
@@ -147,7 +134,7 @@ namespace NeuralNets
 
                 int onlyShow = 0;
 
-                if(score > bestScore)
+                if (score > bestScore)
                 {
                     bestScore = score;
                     Console.ForegroundColor = ConsoleColor.White;
@@ -324,14 +311,14 @@ namespace NeuralNets
                         }
                     }
 
-                    if(Console.KeyAvailable)
+                    if (Console.KeyAvailable)
                     {
                         var key = Console.ReadKey(true);
                         if (key.Key == ConsoleKey.PageUp)
                         {
                             stepTime++;
                         }
-                        else if(key.Key == ConsoleKey.PageDown)
+                        else if (key.Key == ConsoleKey.PageDown)
                         {
                             stepTime = (stepTime > 0) ? (stepTime - 1) : 0;
                         }
@@ -355,9 +342,167 @@ namespace NeuralNets
                     time = fxd;
                 }
             }
+        }
+
+        private static async Task GeneticAlgorithm()
+        {
+            int popSize = 100;
+
+            Random rand = new Random();
+            (FeedForwardNetwork net, double fitness)[] population;
+            Console.Clear();
+
+            int selectedProblem = CHelper.SelectorMenu("Please select the problem.", new[] { "Flappy Bird", "Dino Jump" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta);
+
+            population = new (FeedForwardNetwork, double)[popSize];
+
+            switch (selectedProblem)
+            {
+                case 0:
+                    await FlappyBird(population, rand);
+                    break;
+                case 1:
+                    await DinoJump(population, rand);
+                    break;
+            }
+
+            
 
         }
 
+        private static async Task DinoJump((FeedForwardNetwork net, double fitness)[] population, Random rand)
+        {
+            for(int i = 0; i < population.Length; i++)
+            {
+                population[i] = (new FeedForwardNetwork(3, (3, ActivationFunctions.BinaryStep), (4, ActivationFunctions.BinaryStep), (2, ActivationFunctions.BinaryStep)), 0);
+                population[i].net.Randomize(rand);
+            }
+
+            int bestScore = 0;
+            int gen = 0;
+            int pos = 0;
+
+            Dinosaur[] dinosaurs = new Dinosaur[population.Length];
+
+            Obstacle[] obstacles = new Obstacle[10];
+            
+            for(int i = 0; i < obstacles.Length; i++)
+            {
+                obstacles[i] = new Obstacle(obstacles, 4, rand.Next(10, 16), 1, 1, -3);
+            }
+
+            for(int i = 0; i < dinosaurs.Length; i++)
+            {
+                dinosaurs[i] = new Dinosaur(obstacles);
+            }
+
+            World world = new World(10, 30, 17, false);
+            world.Objects = dinosaurs.Concat<BasePhysicsObject>(obstacles).ToArray();
+            gen++;
+
+            world.SetupObjects();
+
+            TimeSpan elapsedTime = TimeSpan.FromMilliseconds(16);
+
+            Stopwatch watch = new Stopwatch();
+
+            while (true)
+            {
+
+                bool cont = false;
+                bool renderFrame = false;
+
+                if (pos > bestScore)
+                {
+                    bestScore = pos;
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.BackgroundColor = ConsoleColor.Black;
+                    Console.Clear();
+                    Console.Write($"Gen:\t\t\t{gen}\nUpdates survived:\t{population[0].fitness}\nSim time survived:\t{TimeSpan.FromTicks((long)(population[0].fitness * elapsedTime.Ticks))}\nScore:\t\t\t{pos}");
+                }
+
+                if (Console.KeyAvailable)
+                {
+                    ConsoleKeyInfo key = Console.ReadKey(true);
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.BackgroundColor = ConsoleColor.Black;
+                    Console.Clear();
+
+                    if (key.Key == ConsoleKey.Spacebar)
+                    {
+                        Console.Write($"Gen:\t\t\t{gen}\nUpdates survived:\t{population[0].fitness}\nSim time survived:\t{TimeSpan.FromTicks((long)(population[0].fitness * elapsedTime.Ticks))}\nScore:\t\t\t{pos}");
+                    }
+                    else if (key.Key == ConsoleKey.V)
+                    {
+                        /*showAll = key.Modifiers.HasFlag(ConsoleModifiers.Shift);
+                        if (!showAll)
+                        {
+                            for (int i = 0; i < population.Length; i++)
+                            {
+                                if (population[i].fitness >= population[onlyShow].fitness)
+                                {
+                                    onlyShow = i;
+                                }
+                            }
+                        }*/
+                        renderFrame = true;
+                        gen--;
+                        watch.Restart();
+                    }
+                }
+                pos = 0;
+
+                do
+                {
+                    cont = false;
+                    pos++;
+                    if (renderFrame)
+                    {
+                        watch.Restart();
+                        while (watch.ElapsedMilliseconds < elapsedTime.Milliseconds) { }
+                    }
+                    world.Update(elapsedTime);
+                    if(renderFrame)
+                    {
+                        world.Draw();
+                    }
+                    Obstacle nearest = null;
+                    foreach (Obstacle item in obstacles)
+                    {
+                        if (item.Position.X > 2 && item.Position.X <= (nearest?.Position.X ?? 150))
+                        {
+                            nearest = item;
+                        }
+                    }
+                    for (int i = 0; i < dinosaurs.Length; i++)
+                    {
+                        if (!dinosaurs[i].Enabled)
+                        {
+                            continue;
+                        }
+                        bool alive = dinosaurs[i].TryKill();
+                        cont = cont || alive;
+                        if (alive)
+                        {
+                            dinosaurs[i].ProcessNetOutputs(population[i].net.Compute(new double[] { nearest.Position.X - dinosaurs[i].Position.X, nearest.Position.Y - dinosaurs[i].Position.Y, dinosaurs[i].Velocity.Y }));
+                            continue;
+                        }
+                        population[i].fitness = pos;
+                    }
+                    for (int i = 0; i < obstacles.Length; i++)
+                    {
+                        if (obstacles[i].Position.X <= 1)
+                        {
+                            obstacles[i] = new Obstacle(obstacles, 4, rand.Next(10, 16), 1, 1, -3);
+                        }
+                    }
+                } while (cont);
+                if (!renderFrame)
+                {
+                    NeuralNetworkFactory.TrainGenetic(population, rand, 0.1f);
+                }
+            }
+        }
 
         private static async Task GradientTest()
         {

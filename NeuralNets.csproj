@@ -70,6 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bird.cs" />
+    <Compile Include="Dinosaur.cs" />
     <Compile Include="NeuralNetworkFactory.cs" />
     <Compile Include="NeuralNetworks\ActivationFunction.cs" />
     <Compile Include="NeuralNetworks\ActivationFunctions.cs" />
