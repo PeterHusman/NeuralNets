@@ -366,71 +366,79 @@ namespace NeuralNets
                     break;
             }
 
-            
+
 
         }
 
         private static async Task DinoJump((FeedForwardNetwork net, double fitness)[] population, Random rand)
         {
-            for(int i = 0; i < population.Length; i++)
+            for (int i = 0; i < population.Length; i++)
             {
                 population[i] = (new FeedForwardNetwork(3, (3, ActivationFunctions.BinaryStep), (4, ActivationFunctions.BinaryStep), (2, ActivationFunctions.BinaryStep)), 0);
                 population[i].net.Randomize(rand);
             }
 
-            int bestScore = 0;
+            int bestScore = -1;
             int gen = 0;
             int pos = 0;
-
-            Dinosaur[] dinosaurs = new Dinosaur[population.Length];
-
-            Obstacle[] obstacles = new Obstacle[10];
-            
-            for(int i = 0; i < obstacles.Length; i++)
-            {
-                obstacles[i] = new Obstacle(obstacles, 4, rand.Next(10, 16), 1, 1, -3);
-            }
-
-            for(int i = 0; i < dinosaurs.Length; i++)
-            {
-                dinosaurs[i] = new Dinosaur(obstacles);
-            }
-
-            World world = new World(10, 30, 17, false);
-            world.Objects = dinosaurs.Concat<BasePhysicsObject>(obstacles).ToArray();
-            gen++;
-
-            world.SetupObjects();
+            int score = 0;
 
             TimeSpan elapsedTime = TimeSpan.FromMilliseconds(16);
+            int millis = 16;
 
             Stopwatch watch = new Stopwatch();
+            Random random = new Random(0);
+            Func<int> getY = () => random.Next(13, 15);
+
+            ConsoleKeyInfo keyHit = new ConsoleKeyInfo();
+            ConsoleKey defaultKey = keyHit.Key;
 
             while (true)
             {
+                random = new Random(0);
+                Dinosaur[] dinosaurs = new Dinosaur[population.Length];
+
+                Obstacle[] obstacles = new Obstacle[10];
+
+                int highestX = 1;
+
+                for (int i = 0; i < obstacles.Length; i++)
+                {
+                    obstacles[i] = new Obstacle(highestX = highestX + 3, getY(), random.Next(1, 3), 1, -5);
+                }
+
+                for (int i = 0; i < dinosaurs.Length; i++)
+                {
+                    dinosaurs[i] = new Dinosaur(obstacles);
+                }
+
+                World world = new World(10, 30, 17, false);
+                world.Objects = dinosaurs.Concat<BasePhysicsObject>(obstacles).ToArray();
+                world.SetupObjects();
+                gen++;
 
                 bool cont = false;
                 bool renderFrame = false;
 
-                if (pos > bestScore)
+                if (score > bestScore)
                 {
-                    bestScore = pos;
+                    bestScore = score;
                     Console.ForegroundColor = ConsoleColor.White;
                     Console.BackgroundColor = ConsoleColor.Black;
                     Console.Clear();
-                    Console.Write($"Gen:\t\t\t{gen}\nUpdates survived:\t{population[0].fitness}\nSim time survived:\t{TimeSpan.FromTicks((long)(population[0].fitness * elapsedTime.Ticks))}\nScore:\t\t\t{pos}");
+                    Console.Write($"Gen:\t\t\t{gen}\nUpdates survived:\t{population[0].fitness}\nSim time survived:\t{TimeSpan.FromTicks((long)(population[0].fitness * elapsedTime.Ticks))}\nScore:\t\t\t{bestScore}");
                 }
 
-                if (Console.KeyAvailable)
+                if (keyHit.Key != defaultKey)
                 {
-                    ConsoleKeyInfo key = Console.ReadKey(true);
+                    ConsoleKeyInfo key = keyHit;
                     Console.ForegroundColor = ConsoleColor.White;
                     Console.BackgroundColor = ConsoleColor.Black;
                     Console.Clear();
 
                     if (key.Key == ConsoleKey.Spacebar)
                     {
-                        Console.Write($"Gen:\t\t\t{gen}\nUpdates survived:\t{population[0].fitness}\nSim time survived:\t{TimeSpan.FromTicks((long)(population[0].fitness * elapsedTime.Ticks))}\nScore:\t\t\t{pos}");
+                        Console.Write($"Gen:\t\t\t{gen}\nUpdates survived:\t{population[0].fitness}\nSim time survived:\t{TimeSpan.FromTicks((long)(population[0].fitness * elapsedTime.Ticks))}\nScore:\t\t\t{bestScore}");
                     }
                     else if (key.Key == ConsoleKey.V)
                     {
@@ -446,23 +454,58 @@ namespace NeuralNets
                             }
                         }*/
                         renderFrame = true;
-                        gen--;
+                        //gen--;
                         watch.Restart();
                     }
+
+                    keyHit = new ConsoleKeyInfo();
                 }
                 pos = 0;
+                score = 0;
 
                 do
                 {
+                    if (Console.KeyAvailable)
+                    {
+                        var key = Console.ReadKey(true);
+                        if (key.Key == ConsoleKey.V && key.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                        {
+                            renderFrame = !renderFrame;
+                        }
+                        else if (key.Key == ConsoleKey.U)
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.BackgroundColor = ConsoleColor.Black;
+                            Console.Clear();
+                            Console.Write($"Gen in progress:\t{gen}\nUpdates survived:\t{pos}\nSim time survived:\t{TimeSpan.FromTicks((long)(pos * elapsedTime.Ticks))}\nScore:\t\t\t{score}");
+                        }
+                        else if (key.Key == ConsoleKey.Escape)
+                        {
+                            break;
+                        }
+                        else if (key.Key == ConsoleKey.PageUp)
+                        {
+                            millis = Math.Max(millis - 5, 0);
+                        }
+                        else if (key.Key == ConsoleKey.PageDown)
+                        {
+                            millis += 5;
+                        }
+                        else
+                        {
+                            keyHit = key;
+                        }
+                    }
+
                     cont = false;
                     pos++;
                     if (renderFrame)
                     {
                         watch.Restart();
-                        while (watch.ElapsedMilliseconds < elapsedTime.Milliseconds) { }
+                        while (watch.ElapsedMilliseconds < millis) { }
                     }
                     world.Update(elapsedTime);
-                    if(renderFrame)
+                    if (renderFrame)
                     {
                         world.Draw();
                     }
@@ -493,14 +536,15 @@ namespace NeuralNets
                     {
                         if (obstacles[i].Position.X <= 1)
                         {
-                            obstacles[i] = new Obstacle(obstacles, 4, rand.Next(10, 16), 1, 1, -3);
+                            obstacles[i].Reset(highestX, getY());
+                            score++;
                         }
                     }
                 } while (cont);
-                if (!renderFrame)
-                {
-                    NeuralNetworkFactory.TrainGenetic(population, rand, 0.1f);
-                }
+                //if (!renderFrame)
+                //{
+                NeuralNetworkFactory.TrainGenetic(population, rand, 0.1f);
+                //}
             }
         }
 

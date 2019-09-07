@@ -21,6 +21,7 @@ namespace NeuralNets
             Position = new Vector2(2, 13);
             HitBox.Size = new Vector2(1, 2);
             Enabled = true;
+            Acceleration = new Vector2(0, 10);
         }
 
         public Obstacle[] Obstacles { get; set; }
@@ -32,10 +33,13 @@ namespace NeuralNets
             set
             {
                 HitBox.Size.Y = value ? 1 : 2;
+                if(value)
+                {
+                    Velocity.Y = 10;
+                }
                 if (value && !ducking)
                 {
                     Position.Y++;
-                    Velocity.Y = 10;
                 }
                 else if(ducking && !value)
                 {
@@ -57,7 +61,7 @@ namespace NeuralNets
 
             for (int i = 0; i < Obstacles.Length; i++)
             {
-                if (Obstacles[i].HitBox.Intersects(HitBox))
+                if (Obstacles[i].HitBox.HighResolutionIntersects(HitBox))
                 {
                     return true;
                 }
@@ -88,7 +92,7 @@ namespace NeuralNets
 
         public void ProcessNetOutputs(double[] netOutputs)
         {
-            if(Position.Y >= 15 && netOutputs[0] >= 1)
+            if(Position.Y >= 14 && netOutputs[0] >= 1)
             {
                 Velocity.Y = -5;
             }
@@ -103,16 +107,21 @@ namespace NeuralNets
             return ConsoleColor.White;
         }
 
-        public Obstacle(Obstacle[] allObstacles, int space, int y, int width, int height, int speed)
+        public void Reset(int x, int y)
         {
-            float x = allObstacles.Max(a => a?.Position.X ?? 0);
-
-            Position = new Vector2(x + space, y);
-            HitBox.Size = new Vector2(width, height);
-
-            Velocity = new Vector2(speed, 0);
-            Enabled = true;
+            Position = new Vector2(x, y);
         }
+
+        //public Obstacle(Obstacle[] allObstacles, int space, int y, int width, int height, int speed)
+        //{
+        //    float x = allObstacles.Max(a => a?.Position.X ?? 0);
+
+        //    Position = new Vector2(x + space, y);
+        //    HitBox.Size = new Vector2(width, height);
+
+        //    Velocity = new Vector2(speed, 0);
+        //    Enabled = true;
+        //}
 
         public Obstacle(int x, int y, int width, int height, int speed)
         {
