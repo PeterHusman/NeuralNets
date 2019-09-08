@@ -71,6 +71,9 @@
   <ItemGroup>
     <Compile Include="Bird.cs" />
     <Compile Include="Dinosaur.cs" />
+    <Compile Include="MiniMax\IGameState.cs" />
+    <Compile Include="MiniMax\MiniMaxTree.cs" />
+    <Compile Include="MiniMax\TicTacToeGameState.cs" />
     <Compile Include="NeuralNetworkFactory.cs" />
     <Compile Include="NeuralNetworks\ActivationFunction.cs" />
     <Compile Include="NeuralNetworks\ActivationFunctions.cs" />
@@ -88,5 +91,6 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

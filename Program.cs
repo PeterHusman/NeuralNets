@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using UnderEngine;
 using System.Diagnostics;
+using NeuralNets.MiniMax;
 
 namespace NeuralNets
 {
@@ -48,7 +49,7 @@ namespace NeuralNets
                 var waitTask = Task.Delay(5000, token);
                 int selection = -1;
 
-                Task<int> chooseTask = Task.Run(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron", "XORNet - Random Train", "Gradient Descent", "Genetic Algorithm" },
+                Task<int> chooseTask = Task.Run(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron", "XORNet - Random Train", "Gradient Descent", "Genetic Algorithm", "Game Trees" },
                     true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta, token), token);
                 //waitTask.Start();
                 //chooseTask.Start();
@@ -92,6 +93,9 @@ namespace NeuralNets
                     case 4:
                         await GeneticAlgorithm();
                         break;
+                    case 5:
+                        await GameTrees();
+                        break;
                 }
                 //waitTask.Dispose();
                 //chooseTask.Dispose();
@@ -100,6 +104,79 @@ namespace NeuralNets
                     await CHelper.SlowWriteLine(ConsoleColor.DarkYellow, "Thank you for choosing promptly.", 50);
                 }
             }
+        }
+
+        private static async Task GameTrees()
+        {
+            var state = TicTacToeGameState.GenerateInitialState(3);
+            void DrawState()
+            {
+                Console.Clear();
+                for(int i = 0; i < 3; i++)
+                {
+                    for(int j = 0; j < 3; j++)
+                    {
+                        Console.Write(state.Board[i][j] == TicTacToeSquareState.X ? "X " : (state.Board[i][j] == TicTacToeSquareState.O ? "O " : "  "));
+                    }
+                    Console.WriteLine();
+                }
+            }
+
+            while(!state.IsTerminal)
+            {
+                if (state.IsXTurn)
+                {
+                    while (true)
+                    {
+                        var key = Console.ReadKey(true);
+                        int n = key.Key - ConsoleKey.NumPad1;
+                        if(n < 0 || n > 8)
+                        {
+                            continue;
+                        }
+                        int a = 2 - (n / 3);
+                        int b = n % 3;
+                        if(state.Board[a][b] != TicTacToeSquareState.None)
+                        {
+                            continue;
+                        }
+                        state.Board[a][b] = TicTacToeSquareState.X;
+                        state.IsXTurn = false;
+                        break;
+                    }
+                }
+                else
+                {
+                    TicTacToeGameState move = null;
+                    int score = int.MaxValue;
+                    foreach(var m in state.Moves)
+                    {
+                        int score2 = MiniMaxTree.MiniMax(m, false);
+                        if(score2 <= score)
+                        {
+                            score = score2;
+                            if(score2 == -1)
+                            {
+                                state = (TicTacToeGameState)m;
+                                break;
+                            }
+                            move = (TicTacToeGameState)m;
+                        }
+                    }
+                    if(move == null)
+                    {
+                        ;
+                    }
+                    state = move;
+
+                }
+                DrawState();
+            }
+
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine(state.Winning().ToString() + " wins!");
+            Console.ReadKey(true);
         }
 
         private static async Task FlappyBird((FeedForwardNetwork net, double fitness)[] population, Random rand)
