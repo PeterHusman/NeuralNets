@@ -8,6 +8,8 @@ namespace NeuralNets.MiniMax
 {
     public interface IGameState
     {
+        bool IsMaxPlayerTurn { get; }
+
         bool IsTerminal { get; }
         int Value { get; }
 

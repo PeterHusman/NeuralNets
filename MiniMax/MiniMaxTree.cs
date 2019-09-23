@@ -24,7 +24,7 @@ namespace NeuralNets.MiniMax
                     alpha = Math.Max(val, alpha);
                     if(alpha >= beta)
                     {
-                        break;
+                       break;
                     }
                 }
                 return val;

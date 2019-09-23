@@ -15,6 +15,8 @@ namespace NeuralNets.MiniMax
 
     public class TicTacToeGameState : IGameState
     {
+        bool IGameState.IsMaxPlayerTurn => IsXTurn;
+
         public bool IsTerminal => Winning() != TicTacToeSquareState.None || !Board.Any(a => a.Any(b => b == TicTacToeSquareState.None));
 
         public TicTacToeSquareState Winning()
@@ -23,7 +25,7 @@ namespace NeuralNets.MiniMax
             {
                 TicTacToeSquareState curr = Board[i][0];
                 bool valid = true;
-                for (int j = 1; j < Board.Length; j++)
+                for (int j = 0; j < Board.Length; j++)
                 {
                     if (curr != Board[i][j])
                     {
@@ -41,7 +43,7 @@ namespace NeuralNets.MiniMax
             {
                 TicTacToeSquareState curr = Board[0][i];
                 bool valid = true;
-                for (int j = 1; j < Board.Length; j++)
+                for (int j = 0; j < Board.Length; j++)
                 {
                     if (curr != Board[j][i])
                     {
@@ -57,7 +59,7 @@ namespace NeuralNets.MiniMax
 
             TicTacToeSquareState curr2 = Board[0][0];
             bool valid2 = true;
-            for (int i = 1; i < Board.Length; i++)
+            for (int i = 0; i < Board.Length; i++)
             {
                 if (curr2 != Board[i][i])
                 {
@@ -72,7 +74,7 @@ namespace NeuralNets.MiniMax
 
             valid2 = true;
             curr2 = Board[Board.Length - 1][0];
-            for (int i = 1; i < Board.Length; i++)
+            for (int i = 0; i < Board.Length; i++)
             {
                 if (curr2 != Board[Board.Length - 1 - i][i])
                 {
@@ -128,6 +130,21 @@ namespace NeuralNets.MiniMax
                     }
                 }
             }
+        }
+
+        public override string ToString()
+        {
+            string s = "";
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    s += Board[i][j] == TicTacToeSquareState.X ? "X " : (Board[i][j] == TicTacToeSquareState.O ? "O " : "  ");
+                }
+                s += "\\\\\n";
+            }
+            s += MiniMaxTree.MiniMax(this, IsXTurn);
+            return s;
         }
 
         public static TicTacToeGameState GenerateInitialState(int sideLength) => new TicTacToeGameState(new TicTacToeSquareState[sideLength][], true, true);
