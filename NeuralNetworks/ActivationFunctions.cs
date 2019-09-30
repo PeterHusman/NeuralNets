@@ -25,6 +25,8 @@ namespace NeuralNets.NeuralNetworks
 
         public static ActivationFunction Identity = new ActivationFunction(IdentityFunc, IdentityDerivative);
 
+        public static ActivationFunction LeakyReLU = new ActivationFunction(LeakyReLUFunc, LeakyReLUDerivative);
+
         private static double TanHDerivative(double input)
         {
             double d = Math.Tanh(input);
@@ -39,6 +41,16 @@ namespace NeuralNets.NeuralNetworks
         private static double ReLUDerivative(double input)
         {
             return input < 0 ? 0 : 1;
+        }
+
+        private static double LeakyReLUFunc(double input)
+        {
+            return input < 0 ? input * 0.01 : input;
+        }
+
+        private static double LeakyReLUDerivative(double input)
+        {
+            return input < 0 ? 0.01 : 1;
         }
 
         private static double BinaryStepFunc(double input)

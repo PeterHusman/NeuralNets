@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using UnderEngine;
 using System.Diagnostics;
 using NeuralNets.MiniMax;
+using NeuralNets.MonteCarlo;
 
 namespace NeuralNets
 {
@@ -106,77 +107,134 @@ namespace NeuralNets
 
         private static async Task GameTrees()
         {
-            do
+            if (CHelper.SelectorMenu("Select a type of game tree.", new string[] { "MiniMax", "MonteCarlo" }, true, ConsoleColor.Yellow, ConsoleColor.Gray, ConsoleColor.Magenta) == 0)
             {
-                var state = TicTacToeGameState.GenerateInitialState(3);
-                void DrawState()
+                do
                 {
-                    Console.Clear();
-                    for (int i = 0; i < 3; i++)
+                    var state = TicTacToeGameState.GenerateInitialState(3);
+                    void DrawState()
                     {
-                        for (int j = 0; j < 3; j++)
+                        Console.Clear();
+                        for (int i = 0; i < 3; i++)
                         {
-                            Console.Write(state.Board[i][j] == TicTacToeSquareState.X ? "X " : (state.Board[i][j] == TicTacToeSquareState.O ? "O " : "  "));
+                            for (int j = 0; j < 3; j++)
+                            {
+                                Console.Write(state.Board[i][j] == TicTacToeSquareState.X ? "X " : (state.Board[i][j] == TicTacToeSquareState.O ? "O " : "  "));
+                            }
+                            Console.WriteLine();
                         }
-                        Console.WriteLine();
                     }
-                }
 
-                while (!state.IsTerminal)
-                {
-                    if (state.IsXTurn)
+                    while (!state.IsTerminal)
                     {
-                        while (true)
+                        if (state.IsXTurn)
                         {
-                            var key = Console.ReadKey(true);
-                            int n = key.Key - ConsoleKey.NumPad1;
-                            if (n < 0 || n > 8)
+                            while (true)
                             {
-                                continue;
-                            }
-                            int a = 2 - (n / 3);
-                            int b = n % 3;
-                            if (state.Board[a][b] != TicTacToeSquareState.None)
-                            {
-                                continue;
-                            }
-                            state.Board[a][b] = TicTacToeSquareState.X;
-                            state.IsXTurn = false;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        TicTacToeGameState move = null;
-                        int score = int.MaxValue;
-                        foreach (var m in state.Moves)
-                        {
-                            int score2 = MiniMaxTree.MiniMax(m, ((TicTacToeGameState)m).IsXTurn);
-                            if (score2 <= score)
-                            {
-                                score = score2;
-                                if (score2 == -1)
+                                var key = Console.ReadKey(true);
+                                int n = key.Key - ConsoleKey.NumPad1;
+                                if (n < 0 || n > 8)
                                 {
-                                    move = (TicTacToeGameState)m;
-                                    break;
+                                    continue;
                                 }
-                                move = (TicTacToeGameState)m;
+                                int a = 2 - (n / 3);
+                                int b = n % 3;
+                                if (state.Board[a][b] != TicTacToeSquareState.None)
+                                {
+                                    continue;
+                                }
+                                state.Board[a][b] = TicTacToeSquareState.X;
+                                state.IsXTurn = false;
+                                break;
                             }
                         }
-                        if (move == null)
+                        else
                         {
-                            ;
+                            TicTacToeGameState move = null;
+                            int score = int.MaxValue;
+                            foreach (var m in state.Moves)
+                            {
+                                int score2 = MiniMaxTree.MiniMax(m, ((TicTacToeGameState)m).IsXTurn);
+                                if (score2 <= score)
+                                {
+                                    score = score2;
+                                    if (score2 == -1)
+                                    {
+                                        move = (TicTacToeGameState)m;
+                                        break;
+                                    }
+                                    move = (TicTacToeGameState)m;
+                                }
+                            }
+                            if (move == null)
+                            {
+                                ;
+                            }
+                            state = move;
+
                         }
-                        state = move;
-
+                        DrawState();
                     }
-                    DrawState();
-                }
 
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine(state.Winning().ToString() + " wins!");
-            } while(Console.ReadKey(true).Key == ConsoleKey.R);
+                    Console.WriteLine();
+                    Console.WriteLine();
+                    Console.WriteLine(state.Winning().ToString() + " wins!");
+                } while (Console.ReadKey(true).Key == ConsoleKey.R);
+            }
+            else
+            {
+                do
+                {
+                    Random random = new Random();
+                    MonteCarloNode<TicTacToeMonteCarloGameState> node = new MonteCarloNode<TicTacToeMonteCarloGameState>(TicTacToeMonteCarloGameState.GenerateInitialState(3), random);
+                    void DrawState()
+                    {
+                        Console.Clear();
+                        for (int i = 0; i < 3; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                Console.Write(node.State.Board[i][j] == TicTacToeSquareState.X ? "X " : (node.State.Board[i][j] == TicTacToeSquareState.O ? "O " : "  "));
+                            }
+                            Console.WriteLine();
+                        }
+                    }
+
+                    while (!node.IsTerminal)
+                    {
+                        if (node.State.IsXTurn)
+                        {
+                            while (true)
+                            {
+                                var key = Console.ReadKey(true);
+                                int n = key.Key - ConsoleKey.NumPad1;
+                                if (n < 0 || n > 8)
+                                {
+                                    continue;
+                                }
+                                int a = 2 - (n / 3);
+                                int b = n % 3;
+                                if (node.State.Board[a][b] != TicTacToeSquareState.None)
+                                {
+                                    continue;
+                                }
+                                node = node.Children.First(c => c.State.Board[a][b] == TicTacToeSquareState.X);
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            node = node.TreeSearch(100);
+
+                        }
+                        DrawState();
+                    }
+
+                    Console.WriteLine();
+                    Console.WriteLine();
+                    Console.WriteLine(node.State.Winning().ToString() + " wins!");
+                } while (Console.ReadKey(true).Key == ConsoleKey.R);
+            }
         }
 
         private static async Task FlappyBird((FeedForwardNetwork net, double fitness)[] population, Random rand)
@@ -429,7 +487,7 @@ namespace NeuralNets
             (FeedForwardNetwork net, double fitness)[] population;
             Console.Clear();
 
-            int selectedProblem = CHelper.SelectorMenu("Please select the problem.", new[] { "Flappy Bird", "Dino Jump" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta);
+            int selectedProblem = CHelper.SelectorMenu("Please select the problem.", new[] { "Flappy Bird", "Dino Jump", "TicTacToe" }, true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta);
 
             population = new (FeedForwardNetwork, double)[popSize];
 
@@ -441,10 +499,99 @@ namespace NeuralNets
                 case 1:
                     await DinoJump(population, rand);
                     break;
+                case 2:
+                    await GeneticTicTacToe(population, rand);
+                    break;
             }
 
 
 
+        }
+
+        private static async Task GeneticTicTacToe((FeedForwardNetwork net, double fitness)[] population, Random rand)
+        {
+            for (int i = 0; i < population.Length; i++)
+            {
+                population[i] = (new FeedForwardNetwork(9, (18, ActivationFunctions.Identity), (1, ActivationFunctions.Identity)), 0);
+                population[i].net.Randomize(rand);
+            }
+
+            double bestScore = double.NegativeInfinity;
+            double otherBestScore = double.NegativeInfinity;
+
+            while(true)
+            {
+                if(otherBestScore > bestScore)
+                {
+                    bestScore = otherBestScore;
+                    Console.Clear();
+                    Console.WriteLine("Score: " + bestScore);
+                }
+                Parallel.For(0, population.Length, i =>
+                {
+                    double totalScore = 0;
+                    for (int j = 0; j < 50; j++)
+                    {
+                        double roundScore = 0;
+
+                        TicTacToeGameState state = TicTacToeGameState.GenerateInitialState(3);
+                        while (true)
+                        {
+                            int move = (int)population[i].net.Compute(state.Board.SelectMany(a => a.Select(b => (double)b)).ToArray())[0];
+                            if (move < 0 || move > 8)
+                            {
+                                break;
+                            }
+                            int a = move % 3;
+                            int b = move / 3;
+                            if (state.Board[a][b] != TicTacToeSquareState.None)
+                            {
+                                break;
+                            }
+                            state.Board[a][b] = TicTacToeSquareState.X;
+
+                            if (state.IsTerminal)
+                            {
+                                roundScore = state.Winning() == TicTacToeSquareState.None ? 1 : 0;
+                                break;
+                            }
+
+                            TicTacToeGameState prospectiveState = null;
+                            int prospectiveStateScore = int.MaxValue;
+                            foreach (TicTacToeGameState child in state.Moves)
+                            {
+                                int prospectiveProspectiveStateScore = MiniMaxTree.MiniMax(child, false);
+                                if (prospectiveProspectiveStateScore < prospectiveStateScore)
+                                {
+                                    prospectiveStateScore = prospectiveProspectiveStateScore;
+                                    prospectiveState = child;
+                                    if (prospectiveStateScore == -1)
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+
+                            state = prospectiveState;
+
+                            if (state.IsTerminal)
+                            {
+                                roundScore = state.Winning() == TicTacToeSquareState.None ? 1 : 0;
+                                break;
+                            }
+
+                        }
+
+                        totalScore += roundScore;
+                    }
+                    if (totalScore > otherBestScore)
+                    {
+                        otherBestScore = totalScore;
+                    }
+                });
+
+                NeuralNetworkFactory.TrainGenetic(population, rand, 0.05f);
+            }
         }
 
         private static async Task DinoJump((FeedForwardNetwork net, double fitness)[] population, Random rand)
@@ -742,56 +889,6 @@ namespace NeuralNets
             //backgroundWorker.CancelAsync();
 
             //train.Join();
-#if false
-            var a = NeuralNetworkFactory.GradientDescentTrainCoroutine(net, inputs, outputs, 0.01f, 0.01f);
-            int i = 0;
-            foreach (var b in a)
-            {
-                i++;
-                if(i < 300)
-                {
-                    continue;
-                }
-                i = 0;
-                Matrix input = inputs;// new[] { new[] { 1f, 0f }, new[] { 1f, 1f } };
-                Matrix target = outputs;// new [] { new float[] { 1f }, new float[] { 0f } };
-                Console.SetCursorPosition(0, 5);
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine(b);
-                Console.WriteLine();
-                Matrix output = input;
-                Console.WriteLine(output);
-                output = FeedForwardNeuralNetwork.ComputeLayerBatch(input, net.Layers[0].Item1, net.Layers[0].Item2);
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(/*net.Layers[0].Item1*/new Matrix(new[] { net.PartialDerivatives[0] }));
-                Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine(output.Stringify);
-                Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(/*net.Layers[1].Item1*/new Matrix(new[] { net.PartialDerivatives[1] }));
-                Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                output = FeedForwardNeuralNetwork.ComputeLayerBatch(output, net.Layers[1].Item1, net.Layers[1].Item2);
-                Console.WriteLine(output);
-                Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(/*net.Layers[2].Item1*/new Matrix(new[] { net.PartialDerivatives[2] }));
-                Console.WriteLine();
-                output = FeedForwardNeuralNetwork.ComputeLayerBatch(output, net.Layers[2].Item1, net.Layers[2].Item2);
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine(output.Stringify);
-
-                Console.WriteLine();
-                Console.WriteLine(output - target);
-                if(Console.KeyAvailable)
-                {
-                    Console.ReadKey(true);
-                    break;
-                }
-                //Console.WriteLine("     ");
-            }
-#endif
 
             Console.WriteLine();
             while (true)

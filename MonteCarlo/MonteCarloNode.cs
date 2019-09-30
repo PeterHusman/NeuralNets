@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace NeuralNets.MonteCarlo
 {
-    public class MonteCarloNode<T> where T : IGameState
+    public class MonteCarloNode<T> where T : IMonteCarloGameState
     {
         public T State { get; private set; }
 
@@ -17,7 +17,7 @@ namespace NeuralNets.MonteCarlo
             {
                 if (children == null)
                 {
-                    children = State.Moves.Select(a => new MonteCarloNode<T>((T)a, this, Random));
+                    children = State.Moves.Select(a => new MonteCarloNode<T>((T)a, this, Random)).ToArray();
                 }
                 return children;
             }
@@ -30,24 +30,22 @@ namespace NeuralNets.MonteCarlo
 
         public bool Visited { get; private set; } = false;
 
-        public bool FullyExpanded { get; private set; } = false;
+        public bool FullyExpanded {
+            get => Children.Any() && Children.All(a => a.Visited); }
 
         public MonteCarloNode<T> Parent { get; private set; } = null;
 
         public Random Random { get; private set; }
 
-        public MonteCarloNode<T> TreeSearch()
+        public MonteCarloNode<T> TreeSearch(int numberOfSimulations = 10000)
         {
             Visited = true;
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < numberOfSimulations; i++)
             {
                 MonteCarloNode<T> currLeaf = Traverse(this);
+                currLeaf.Visited = true;
                 double result = Rollout(currLeaf);
                 BackPropogate(currLeaf, result);
-                if(!FullyExpanded && Children.All(a => a.Visited))
-                {
-                    FullyExpanded = true;
-                }
             }
             return OptimalChild();
         }
@@ -67,7 +65,7 @@ namespace NeuralNets.MonteCarlo
 
         public MonteCarloNode<T> OptimalChild()
         {
-            return Children.OrderByDescending(a => a.SimulationCount).FirstOrDefault(/*a => a.CumulativeResult / a.SimulationCount > 0.9*/);
+            return Children.OrderByDescending(a => a.SimulationCount).First(/*a => a.CumulativeResult / a.SimulationCount > 0.9*/);
         }
 
         public static void BackPropogate(MonteCarloNode<T> node, double result)
@@ -75,7 +73,7 @@ namespace NeuralNets.MonteCarlo
             while (node != null)
             {
                 //Figure out use of result to allow for computation relative to player
-                node.CumulativeResult += result;
+                node.CumulativeResult += node.State.IsMaxPlayerTurn ? result : (1 - result);
                 node.SimulationCount++;
                 node = node.Parent;
                 //Try this:
@@ -118,6 +116,10 @@ namespace NeuralNets.MonteCarlo
                     bestUCT = d;
                     correspondingNode = node;
                 }
+            }
+            if(correspondingNode == null)
+            {
+
             }
             return correspondingNode;
         }
