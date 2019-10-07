@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NeuralNets.MiniMax
 {
-    public class MiniMaxTree
+    public static class MiniMaxTree
     {
         public static int MiniMax(IGameState state, bool isMax, int alpha = int.MinValue, int beta = int.MaxValue)
         {
@@ -44,5 +44,69 @@ namespace NeuralNets.MiniMax
                 return val;
             }
         }
+
+        public static MiniMaxNode GenerateFromGameState(IGameState state)
+        {
+            return new MiniMaxNode(state);
+        }
+    }
+
+    public class MiniMaxNode
+    {
+        public IGameState CurrentState { get; private set; }
+
+        public int Score { get; private set; }
+
+        public IReadOnlyList<MiniMaxNode> Children { get; private set; }
+
+        public MiniMaxNode BestChild { get; private set; }
+
+        private void PopulateChildren()
+        {
+            List<MiniMaxNode> nodes = new List<MiniMaxNode>();
+            if (CurrentState.IsMaxPlayerTurn)
+            {
+                Score = int.MinValue;
+                foreach (IGameState move in CurrentState.Moves)
+                {
+                    MiniMaxNode newNode = new MiniMaxNode(move);
+                    nodes.Add(newNode);
+                    if (newNode.Score > Score)
+                    {
+                        BestChild = newNode;
+                        Score = BestChild.Score;
+                    }
+                }
+            }
+            else
+            {
+                Score = int.MaxValue;
+                foreach (IGameState move in CurrentState.Moves)
+                {
+                    MiniMaxNode newNode = new MiniMaxNode(move);
+                    nodes.Add(newNode);
+                    if (newNode.Score < Score)
+                    {
+                        BestChild = newNode;
+                        Score = BestChild.Score;
+                    }
+                }
+            }
+            Children = nodes.OrderByDescending(a => a.Score).ToArray();
+        }
+
+        internal MiniMaxNode(IGameState state)
+        {
+            CurrentState = state;
+            if(state.IsTerminal)
+            {
+                Score = state.Value;
+                Children = new MiniMaxNode[0];
+                return;
+            }
+            PopulateChildren();
+        }
+
+
     }
 }

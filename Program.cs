@@ -517,78 +517,173 @@ namespace NeuralNets
             }
 
             double bestScore = double.NegativeInfinity;
-            double otherBestScore = double.NegativeInfinity;
+            double otherBestScore = 0;
+
+            int numberOfGames = 150;
+
+            int gen = 0;
+
+            MiniMaxNode node = MiniMaxTree.GenerateFromGameState(TicTacToeGameState.GenerateInitialState(3));
 
             while(true)
             {
-                if(otherBestScore > bestScore)
+                gen++;
+                if (Console.KeyAvailable)
+                {
+                    var k = Console.ReadKey(true);
+                    if (k.Key == ConsoleKey.Escape)
+                    {
+                        return;
+                    }
+
+                    do
+                    {
+                        var state = TicTacToeGameState.GenerateInitialState(3);
+                        void DrawState()
+                        {
+                            Console.Clear();
+                            for (int i = 0; i < 3; i++)
+                            {
+                                for (int j = 0; j < 3; j++)
+                                {
+                                    Console.Write(state.Board[i][j] == TicTacToeSquareState.X ? "X " : (state.Board[i][j] == TicTacToeSquareState.O ? "O " : "  "));
+                                }
+                                Console.WriteLine();
+                            }
+                        }
+
+                        while (!state.IsTerminal)
+                        {
+                            if (state.IsXTurn)
+                            {
+                                int move = (int)population[0].net.Compute(state.Board.SelectMany(a => a.Select(b => (double)b)).ToArray())[0];
+                                if (move < 0 || move > 8)
+                                {
+                                    break;
+                                }
+                                int a = move % 3;
+                                int b = move / 3;
+                                if (state.Board[a][b] != TicTacToeSquareState.None)
+                                {
+                                    break;
+                                }
+                                state.Board[a][b] = TicTacToeSquareState.X;
+
+                                state.IsXTurn = !state.IsXTurn;
+                            }
+                            else
+                            {
+                                while (true)
+                                {
+                                    var key = Console.ReadKey(true);
+                                    int n = key.Key - ConsoleKey.NumPad1;
+                                    if (n < 0 || n > 8)
+                                    {
+                                        continue;
+                                    }
+                                    int a = 2 - (n / 3);
+                                    int b = n % 3;
+                                    if (state.Board[a][b] != TicTacToeSquareState.None)
+                                    {
+                                        continue;
+                                    }
+                                    state.Board[a][b] = TicTacToeSquareState.O;
+                                    state.IsXTurn = !state.IsXTurn;
+                                    break;
+                                }
+
+                            }
+                            DrawState();
+                        }
+
+                        Console.WriteLine();
+                        Console.WriteLine();
+                        Console.WriteLine(state.Winning().ToString() + " wins!");
+                    } while (Console.ReadKey(true).Key == ConsoleKey.R);
+                }
+                if (otherBestScore > bestScore)
                 {
                     bestScore = otherBestScore;
                     Console.Clear();
-                    Console.WriteLine("Score: " + bestScore);
+                    Console.WriteLine("Generation: " + gen + "\nAvg. fitness: " + bestScore/numberOfGames);
+                    
                 }
-                Parallel.For(0, population.Length, i =>
+                for(int i = 0; i < population.Length; i++)
                 {
                     double totalScore = 0;
-                    for (int j = 0; j < 50; j++)
+                    for (int j = 0; j < numberOfGames; j++)
+                    //Parallel.For(0, numberOfGames, j =>
                     {
+                        MiniMaxNode currNode = node;
+
                         double roundScore = 0;
 
-                        TicTacToeGameState state = TicTacToeGameState.GenerateInitialState(3);
                         while (true)
                         {
+                            TicTacToeGameState state = (TicTacToeGameState)currNode.CurrentState;
                             int move = (int)population[i].net.Compute(state.Board.SelectMany(a => a.Select(b => (double)b)).ToArray())[0];
                             if (move < 0 || move > 8)
                             {
+                                roundScore -= 5;
                                 break;
                             }
                             int a = move % 3;
                             int b = move / 3;
                             if (state.Board[a][b] != TicTacToeSquareState.None)
                             {
+                                roundScore -= 5;
                                 break;
                             }
-                            state.Board[a][b] = TicTacToeSquareState.X;
+                            currNode = currNode.Children.First(c => ((TicTacToeGameState)c.CurrentState).Board[a][b] == TicTacToeSquareState.X);
+                            state = (TicTacToeGameState)currNode.CurrentState;
 
                             if (state.IsTerminal)
                             {
-                                roundScore = state.Winning() == TicTacToeSquareState.None ? 1 : 0;
+                                
+                                //roundScore = state.Winning() == TicTacToeSquareState.None ? 1 : 0;
                                 break;
                             }
 
-                            TicTacToeGameState prospectiveState = null;
-                            int prospectiveStateScore = int.MaxValue;
-                            foreach (TicTacToeGameState child in state.Moves)
-                            {
-                                int prospectiveProspectiveStateScore = MiniMaxTree.MiniMax(child, false);
-                                if (prospectiveProspectiveStateScore < prospectiveStateScore)
-                                {
-                                    prospectiveStateScore = prospectiveProspectiveStateScore;
-                                    prospectiveState = child;
-                                    if (prospectiveStateScore == -1)
-                                    {
-                                        break;
-                                    }
-                                }
-                            }
+                            roundScore++;
 
-                            state = prospectiveState;
+                            int n = currNode.Children.Count;// * currNode.Children.Count;
+
+                            currNode = currNode.Children[rand.Next(0, n)];
+                            state = (TicTacToeGameState)currNode.CurrentState;
 
                             if (state.IsTerminal)
                             {
-                                roundScore = state.Winning() == TicTacToeSquareState.None ? 1 : 0;
+                                //roundScore = state.Winning() == TicTacToeSquareState.None ? 1 : 0;
                                 break;
                             }
 
                         }
 
+                        if(currNode.CurrentState.IsTerminal)
+                        {
+                            TicTacToeSquareState winningParty = ((TicTacToeGameState)currNode.CurrentState).Winning();
+                            if(winningParty == TicTacToeSquareState.X)
+                            {
+                                roundScore = 40 - roundScore;
+                            }
+                            else if(winningParty == TicTacToeSquareState.O)
+                            {
+                                roundScore -= 5;
+                            }
+                            else
+                            {
+
+                            }
+                        }
+
                         totalScore += roundScore;
                     }
+                    //);
                     if (totalScore > otherBestScore)
                     {
                         otherBestScore = totalScore;
                     }
-                });
+                }
 
                 NeuralNetworkFactory.TrainGenetic(population, rand, 0.05f);
             }
