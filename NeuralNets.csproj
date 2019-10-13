@@ -80,6 +80,8 @@
     <Compile Include="NeuralNetworkFactory.cs" />
     <Compile Include="NeuralNetworks\ActivationFunction.cs" />
     <Compile Include="NeuralNetworks\ActivationFunctions.cs" />
+    <Compile Include="NeuralNetworks\Convolutional\ConvolutionalLayer.cs" />
+    <Compile Include="NeuralNetworks\Convolutional\ICNNLayer.cs" />
     <Compile Include="NeuralNetworks\FeedForwardNetwork.cs" />
     <Compile Include="NeuralNetworks\FeedForwardNeuralNetwork.cs" />
     <Compile Include="Matrix.cs" />
