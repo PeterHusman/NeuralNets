@@ -20,6 +20,8 @@ namespace NeuralNets.NeuralNetworks.Convolutional
 
         public float[][][] LastOuts { get; private set; }
 
+        public float[][][] LastIns { get; private set; }
+
         public float[] Biases { get; private set; }
 
         public int OutputSideLength { get; private set; }
@@ -32,6 +34,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
 
         public float[][][] Compute(float[][][] input)
         {
+            LastIns = input;
             //i is layer in output
             LastOuts = new float[Depth][][];
             for(int i = 0; i < Depth; i++)
@@ -78,6 +81,93 @@ namespace NeuralNets.NeuralNetworks.Convolutional
             return LastOuts;
         }
 
+        public float[][][] BackPropagation(float[][][] derivatives, float learningRate)
+        {
+            float[][][] dErrorDInput = new float[ExpectedInputDepth][][];
+            float[][][][] dErrorDWeight = new float[Depth][][][];
+            for(int i = 0; i < ExpectedInputDepth; i++)
+            {
+                dErrorDInput[i] = new float[ExpectedInputWidth][];
+                for(int j = 0; j < ExpectedInputWidth; j++)
+                {
+                    dErrorDInput[i][j] = new float[ExpectedInputWidth];
+                }
+            }
+            for(int i = 0; i < Depth; i++)
+            {
+                dErrorDWeight[i] = new float[ExpectedInputDepth][][];
+                for(int j = 0; j < ExpectedInputDepth; j++)
+                {
+                    dErrorDWeight[i][j] = new float[FilterSideLength][];
+                    for(int k = 0; k < FilterSideLength; k++)
+                    {
+                        dErrorDWeight[i][j][k] = new float[FilterSideLength];
+                    }
+                }
+            }
+            //i is depth in output
+            for (int i = 0; i < Depth; i++)
+            {
+                //y is part of position in output
+                for (int y = 0; y < OutputSideLength; y++)
+                {
+                    //x is part of position in output
+                    for (int x = 0; x < OutputSideLength; x++)
+                    {
+                        if(UseReLU && LastOuts[i][y][x] == 0)
+                        {
+                            continue;
+                        }
+                        //j is depth in input
+                        for (int j = 0; j < ExpectedInputDepth; j++)
+                        {
+                            //k is part of position in filter
+                            for (int k = 0; k < FilterSideLength; k++)
+                            {
+                                int absY = y * StrideLength + k;
+                                if (absY <= ZeroPaddingSize || absY >= ExpectedInputWidth + ZeroPaddingSize)
+                                {
+                                    continue;
+                                }
+                                //l is part of position in filter
+                                for (int l = 0; l < FilterSideLength; l++)
+                                {
+                                    int absX = x * StrideLength + l;
+                                    if (absX <= ZeroPaddingSize || absX >= ExpectedInputWidth + ZeroPaddingSize)
+                                    {
+                                        continue;
+                                    }
+                                    dErrorDInput[j][absY][absX] += Weights[i][j][k][l] * derivatives[i][y][x];
+                                    dErrorDWeight[i][j][k][l] += derivatives[i][y][x] * LastIns[j][absY][absX];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for(int i = 0; i < Depth; i++)
+            {
+                for(int j = 0; j < ExpectedInputDepth; j++)
+                {
+                    for(int k = 0; k < FilterSideLength; k++)
+                    {
+                        for(int l = 0; l < FilterSideLength; l++)
+                        {
+                            Weights[i][j][k][l] -= learningRate * dErrorDWeight[i][j][k][l];
+                        }
+                    }
+                }
+            }
+
+            //TODO: Bias gradient descent.
+            //Also TODO: Test.
+
+            //https://medium.com/@2017csm1006/forward-and-backpropagation-in-convolutional-neural-network-4dfa96d7b37e
+
+            return dErrorDInput;
+        }
+
         public ConvolutionalLayer(int inputWidth, int filterSize, int padding, int stride, int depth, int inputDepth, bool useReLU)
         {
             ExpectedInputWidth = inputWidth;
@@ -91,7 +181,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
             OutputSideLength = (int)d;
             if(d != (double)OutputSideLength)
             {
-                throw new InvalidOperationException();
+                throw new ArgumentException();
             }
             Weights = new float[depth][][][];
             for(int i = 0; i < depth; i++)

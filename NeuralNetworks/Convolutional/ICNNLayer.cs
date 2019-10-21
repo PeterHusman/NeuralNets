@@ -11,5 +11,12 @@ namespace NeuralNets.NeuralNetworks.Convolutional
         float[][][] Compute(float[][][] input);
         int FilterSideLength { get; }
         int StrideLength { get; }
+        float[][][] LastOuts { get; }
+        float[][][] LastIns { get; }
+        int ExpectedInputWidth { get; }
+        int OutputSideLength { get; }
+        int ExpectedInputDepth { get; }
+        int ZeroPaddingSize { get; }
+        float[][][] BackPropagation(float[][][] derivatives, float learningRate);
     }
 }
