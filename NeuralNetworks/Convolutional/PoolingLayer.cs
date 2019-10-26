@@ -67,7 +67,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
             return LastOuts;
         }
 
-        public float[][][] BackPropagation(float[][][] errors, float learningRate)
+        public float[][][] BackPropagation(float[][][] errors)
         {
             float[][][] dErrorDInput = new float[ExpectedInputDepth][][];
             for (int i = 0; i < ExpectedInputDepth; i++)
@@ -115,6 +115,16 @@ namespace NeuralNets.NeuralNetworks.Convolutional
             }
 
             return dErrorDInput;
+        }
+
+        void ICNNLayer.Randomize(Random random) { }
+
+        void ICNNLayer.ClearUpdates()
+        {
+        }
+
+        void ICNNLayer.ApplyUpdates(float learningRate)
+        {
         }
 
         public PoolingLayer(int inputWidth, int filterSize, int padding, int stride, int inputDepth)

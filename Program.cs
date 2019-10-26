@@ -14,6 +14,7 @@ using UnderEngine;
 using System.Diagnostics;
 using NeuralNets.MiniMax;
 using NeuralNets.MonteCarlo;
+using NeuralNets.NeuralNetworks.Convolutional;
 
 namespace NeuralNets
 {
@@ -48,7 +49,7 @@ namespace NeuralNets
                 var waitTask = Task.Delay(5000, token);
                 int selection = -1;
 
-                Task<int> chooseTask = Task.Run(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron", "XORNet - Random Train", "Gradient Descent", "Genetic Algorithm", "Game Trees" },
+                Task<int> chooseTask = Task.Run(() => CHelper.SelectorMenu(@"Please select the program to run.", new[] { "Hill Climber", "Perceptron", "XORNet - Random Train", "Gradient Descent", "Genetic Algorithm", "Game Trees", "Convolutional" },
                     true, ConsoleColor.DarkYellow, ConsoleColor.Gray, ConsoleColor.Magenta, token), token);
                 //waitTask.Start();
                 //chooseTask.Start();
@@ -95,12 +96,32 @@ namespace NeuralNets
                     case 5:
                         await GameTrees();
                         break;
+                    case 6:
+                        await Convolutional();
+                        break;
                 }
                 //waitTask.Dispose();
                 //chooseTask.Dispose();
                 if (selection != -1 && timeWasted > 0)
                 {
                     await CHelper.SlowWriteLine(ConsoleColor.DarkYellow, "Thank you for choosing promptly.", 50);
+                }
+            }
+        }
+
+        private static async Task Convolutional()
+        {
+            ConvolutionalNeuralNetwork convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(1, 1, 0, 1, 1, 1, false));
+            convNet.Randomize(new Random());
+            float bestError = float.PositiveInfinity;
+            while(true)
+            {
+                float error = convNet.GradientDescent(new[] { new[] { new[] { new[] { 1f } } }, new[] { new[] { new[] { 0f } } } }, new[] { new[] { new[] { new[] { 1f } } }, new[] { new[] { new[] { 0f } } } }, 0.01f);
+                if(error < bestError)
+                {
+                    bestError = error;
+                    Console.Clear();
+                    Console.Write("Error: " + error);
                 }
             }
         }

@@ -17,6 +17,9 @@ namespace NeuralNets.NeuralNetworks.Convolutional
         int OutputSideLength { get; }
         int ExpectedInputDepth { get; }
         int ZeroPaddingSize { get; }
-        float[][][] BackPropagation(float[][][] derivatives, float learningRate);
+        void ClearUpdates();
+        void ApplyUpdates(float learningRate);
+        float[][][] BackPropagation(float[][][] derivatives);
+        void Randomize(Random random);
     }
 }

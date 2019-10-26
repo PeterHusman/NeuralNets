@@ -10,7 +10,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
     {
         public ICNNLayer[] Layers { get; private set; }
 
-        public ConvolutionalNeuralNetwork(ICNNLayer[] layers)
+        public ConvolutionalNeuralNetwork(params ICNNLayer[] layers)
         {
             Layers = layers;
         }
@@ -25,26 +25,57 @@ namespace NeuralNets.NeuralNetworks.Convolutional
             return vol;
         }
 
-        public void GradientDescent(float[][][] input, float[][][] targetOut, float learningRate)
+        public float GradientDescent(float[][][][] input, float[][][][] targetOut, float learningRate)
         {
-            float[][][] outs = Compute(input);
-            float[][][] errors = new float[targetOut.Length][][];
-            for(int i = 0; i < errors.Length; i++)
+            
+            float totalError = 0f;
+
+            for(int i = 0; i < Layers.Length; i++)
             {
-                errors[i] = new float[targetOut[i].Length][];
-                for(int j = 0; j < errors[i].Length; j++)
-                {
-                    errors[i][j] = new float[targetOut[i][j].Length];
-                    for(int k = 0; k < errors[i][j].Length; k++)
-                    {
-                        errors[i][j][k] = targetOut[i][j][k] - outs[i][j][k];
-                    }
-                }
+                Layers[i].ClearUpdates();
             }
 
-            for(int i = Layers.Length - 1; i >= 0; i--)
+            for (int inNumber = 0; inNumber < input.Length; inNumber++)
             {
-                errors = Layers[i].BackPropagation(errors, learningRate);
+
+                float[][][] outs = Compute(input[inNumber]);
+                float[][][] errors = new float[targetOut[inNumber].Length][][];
+
+                for (int i = 0; i < errors.Length; i++)
+                {
+                    errors[i] = new float[targetOut[inNumber][i].Length][];
+                    for (int j = 0; j < errors[i].Length; j++)
+                    {
+                        errors[i][j] = new float[targetOut[inNumber][i][j].Length];
+                        for (int k = 0; k < errors[i][j].Length; k++)
+                        {
+                            errors[i][j][k] = targetOut[inNumber][i][j][k] - outs[i][j][k];
+                            totalError += Math.Abs(errors[i][j][k]);
+                        }
+                    }
+                }
+
+                for (int i = Layers.Length - 1; i >= 0; i--)
+                {
+                    errors = Layers[i].BackPropagation(errors);
+                }
+
+            }
+
+
+            for(int i = 0; i < Layers.Length; i++)
+            {
+                Layers[i].ApplyUpdates(-learningRate);
+            }
+
+            return totalError;
+        }
+
+        public void Randomize(Random random)
+        {
+            for(int i = 0; i < Layers.Length; i++)
+            {
+                Layers[i].Randomize(random);
             }
         }
     }
