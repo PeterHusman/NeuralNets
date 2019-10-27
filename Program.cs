@@ -111,13 +111,32 @@ namespace NeuralNets
 
         private static async Task Convolutional()
         {
-            ConvolutionalNeuralNetwork convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(1, 1, 0, 1, 1, 1, false));
+            ConvolutionalNeuralNetwork convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 2, 0, 1, 1, 1, false)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
             convNet.Randomize(new Random());
             float bestError = float.PositiveInfinity;
-            while(true)
+            float[][][][] inputs = new float[10][][][];
+            float[][][][] tOuts = new float[10][][][];
+            inputs[0] = new[] { new[] { new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f } } };
+            tOuts[0] = new[] { new[] { new[] { 0f, 0f }, new[] { 0f, 0f } } };
+            for (int i = 1; i < 10; i++)
             {
-                float error = convNet.GradientDescent(new[] { new[] { new[] { new[] { 1f } } }, new[] { new[] { new[] { 0f } } } }, new[] { new[] { new[] { new[] { 1f } } }, new[] { new[] { new[] { 0f } } } }, 0.01f);
-                if(error < bestError)
+                inputs[i] = new[] { new[] { new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f } } };
+                inputs[i][0][(i - 1) / 3][(i - 1) % 3] = 1;
+                tOuts[i] = new float[1][][];
+                tOuts[i][0] = new float[2][];
+                for(int j = 0; j < tOuts[i][0].Length; j++)
+                {
+                    tOuts[i][0][j] = new float[2];
+                    for (int k = 0; k < tOuts[i][0][j].Length; k++)
+                    {
+                        tOuts[i][0][j][k] = (k <= ((i - 1) % 3) && ((i - 1) % 3) <= (k + 1) && j * 3 <= (i - 1) && (i - 1) < (j * 3 + 6)) ? 1f : 0f;
+                    }
+                }
+            }
+            while (true)
+            {
+                float error = convNet.StochasticGradientDescent(inputs, tOuts, 0.01f);
+                if (error < bestError)
                 {
                     bestError = error;
                     Console.Clear();
@@ -546,7 +565,7 @@ namespace NeuralNets
 
             MiniMaxNode node = MiniMaxTree.GenerateFromGameState(TicTacToeGameState.GenerateInitialState(3));
 
-            while(true)
+            while (true)
             {
                 gen++;
                 if (Console.KeyAvailable)
@@ -626,10 +645,10 @@ namespace NeuralNets
                 {
                     bestScore = otherBestScore;
                     Console.Clear();
-                    Console.WriteLine("Generation: " + gen + "\nAvg. fitness: " + bestScore/numberOfGames);
-                    
+                    Console.WriteLine("Generation: " + gen + "\nAvg. fitness: " + bestScore / numberOfGames);
+
                 }
-                for(int i = 0; i < population.Length; i++)
+                for (int i = 0; i < population.Length; i++)
                 {
                     double totalScore = 0;
                     for (int j = 0; j < numberOfGames; j++)
@@ -660,7 +679,7 @@ namespace NeuralNets
 
                             if (state.IsTerminal)
                             {
-                                
+
                                 //roundScore = state.Winning() == TicTacToeSquareState.None ? 1 : 0;
                                 break;
                             }
@@ -680,14 +699,14 @@ namespace NeuralNets
 
                         }
 
-                        if(currNode.CurrentState.IsTerminal)
+                        if (currNode.CurrentState.IsTerminal)
                         {
                             TicTacToeSquareState winningParty = ((TicTacToeGameState)currNode.CurrentState).Winning();
-                            if(winningParty == TicTacToeSquareState.X)
+                            if (winningParty == TicTacToeSquareState.X)
                             {
                                 roundScore = 40 - roundScore;
                             }
-                            else if(winningParty == TicTacToeSquareState.O)
+                            else if (winningParty == TicTacToeSquareState.O)
                             {
                                 roundScore -= 5;
                             }

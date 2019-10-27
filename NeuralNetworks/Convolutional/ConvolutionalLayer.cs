@@ -133,7 +133,6 @@ namespace NeuralNets.NeuralNetworks.Convolutional
 
         public float[][][] BackPropagation(float[][][] derivatives)
         {
-            ClearUpdates();
             
             //i is depth in output
             for (int i = 0; i < Depth; i++)

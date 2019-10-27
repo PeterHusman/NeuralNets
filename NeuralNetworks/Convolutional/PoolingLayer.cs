@@ -38,12 +38,12 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                     LastOuts[i][y] = new float[OutputSideLength];
                     for (int x = 0; x < OutputSideLength; x++)
                     {
-                        LastOuts[i][y][x] = 0f;
+                        LastOuts[i][y][x] = float.NegativeInfinity;
                         //k is part of position in filter
                         for (int k = 0; k < FilterSideLength; k++)
                         {
                             int absY = y * StrideLength + k;
-                            if (absY <= ZeroPaddingSize || absY >= ExpectedInputWidth + ZeroPaddingSize)
+                            if (absY < ZeroPaddingSize || absY >= ExpectedInputWidth + ZeroPaddingSize)
                             {
                                 continue;
                             }
@@ -51,7 +51,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                             for (int l = 0; l < FilterSideLength; l++)
                             {
                                 int absX = x * StrideLength + l;
-                                if (absX <= ZeroPaddingSize || absX >= ExpectedInputWidth + ZeroPaddingSize)
+                                if (absX < ZeroPaddingSize || absX >= ExpectedInputWidth + ZeroPaddingSize)
                                 {
                                     continue;
                                 }
@@ -92,7 +92,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                         for (int k = 0; k < FilterSideLength; k++)
                         {
                             int absY = y * StrideLength + k;
-                            if (absY <= ZeroPaddingSize || absY >= ExpectedInputWidth + ZeroPaddingSize)
+                            if (absY < ZeroPaddingSize || absY >= ExpectedInputWidth + ZeroPaddingSize)
                             {
                                 continue;
                             }
@@ -100,13 +100,13 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                             for (int l = 0; l < FilterSideLength; l++)
                             {
                                 int absX = x * StrideLength + l;
-                                if (absX <= ZeroPaddingSize || absX >= ExpectedInputWidth + ZeroPaddingSize)
+                                if (absX < ZeroPaddingSize || absX >= ExpectedInputWidth + ZeroPaddingSize)
                                 {
                                     continue;
                                 }
                                 if(LastIns[i][absY][absX] == LastOuts[i][y][x])
                                 {
-                                    dErrorDInput[i][absY][absX] = 1;
+                                    dErrorDInput[i][absY][absX] += errors[i][y][x];
                                 }
                             }
                         }

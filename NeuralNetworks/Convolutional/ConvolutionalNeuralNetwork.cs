@@ -25,6 +25,43 @@ namespace NeuralNets.NeuralNetworks.Convolutional
             return vol;
         }
 
+        public float GradientDescent(float learningRate, params (float[][][] input, float[][][] targetOutput)[] trainingData)
+        {
+            return GradientDescent(trainingData, learningRate);
+        }
+
+        public float GradientDescent((float[][][] input, float[][][] targetOutput)[] trainingData, float learningRate)
+        {
+            float[][][][] inputs = new float[trainingData.Length][][][];
+            float[][][][] targetOutputs = new float[trainingData.Length][][][];
+            for(int i = 0; i < trainingData.Length; i++)
+            {
+                inputs[i] = trainingData[i].input;
+                targetOutputs[i] = trainingData[i].targetOutput;
+            }
+            return GradientDescent(inputs, targetOutputs, learningRate);
+        }
+
+        public float StochasticGradientDescent((float[][][] input, float[][][] targetOutput)[] trainingData, float learningRate)
+        {
+            float totalTotalError = 0f;
+            for(int i = 0; i < trainingData.Length; i++)
+            {
+                totalTotalError += GradientDescent(learningRate, (trainingData[i].input, trainingData[i].targetOutput));
+            }
+            return totalTotalError;
+        }
+
+        public float StochasticGradientDescent(float[][][][] input, float[][][][] targetOutput, float learningRate)
+        {
+            float totalTotalError = 0f;
+            for (int i = 0; i < input.Length; i++)
+            {
+                totalTotalError += GradientDescent(learningRate, (input[i], targetOutput[i]));
+            }
+            return totalTotalError;
+        }
+
         public float GradientDescent(float[][][][] input, float[][][][] targetOut, float learningRate)
         {
             
