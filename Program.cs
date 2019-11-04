@@ -15,6 +15,7 @@ using System.Diagnostics;
 using NeuralNets.MiniMax;
 using NeuralNets.MonteCarlo;
 using NeuralNets.NeuralNetworks.Convolutional;
+using System.Drawing;
 
 namespace NeuralNets
 {
@@ -111,37 +112,89 @@ namespace NeuralNets
 
         private static async Task Convolutional()
         {
-            ConvolutionalNeuralNetwork convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 2, 0, 1, 1, 1, false)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
-            convNet.Randomize(new Random());
-            float bestError = float.PositiveInfinity;
-            float[][][][] inputs = new float[10][][][];
-            float[][][][] tOuts = new float[10][][][];
-            inputs[0] = new[] { new[] { new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f } } };
-            tOuts[0] = new[] { new[] { new[] { 0f, 0f }, new[] { 0f, 0f } } };
-            for (int i = 1; i < 10; i++)
+            ConvolutionalNeuralNetwork convNet;
+            float bestError;
+            float[][][][] inputs;
+            float[][][][] tOuts;
+            switch (CHelper.SelectorMenu("Pick problem to solve", new[] { "Identify soul on field", "Random test", "" }, true, ConsoleColor.Yellow, ConsoleColor.Gray, ConsoleColor.Magenta))
             {
-                inputs[i] = new[] { new[] { new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f } } };
-                inputs[i][0][(i - 1) / 3][(i - 1) % 3] = 1;
-                tOuts[i] = new float[1][][];
-                tOuts[i][0] = new float[2][];
-                for(int j = 0; j < tOuts[i][0].Length; j++)
-                {
-                    tOuts[i][0][j] = new float[2];
-                    for (int k = 0; k < tOuts[i][0][j].Length; k++)
+                case 1:
+                    convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 2, 0, 1, 1, 1, false), new PoolingLayer(2, 1, 0, 1, 1)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
+                    convNet.Randomize(new Random());
+                    bestError = float.PositiveInfinity;
+                    inputs = new float[10][][][];
+                    tOuts = new float[10][][][];
+                    inputs[0] = new[] { new[] { new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f } } };
+                    tOuts[0] = new[] { new[] { new[] { 0f, 0f }, new[] { 0f, 0f } } };
+                    for (int i = 1; i < 10; i++)
                     {
-                        tOuts[i][0][j][k] = (k <= ((i - 1) % 3) && ((i - 1) % 3) <= (k + 1) && j * 3 <= (i - 1) && (i - 1) < (j * 3 + 6)) ? 1f : 0f;
+                        inputs[i] = new[] { new[] { new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f } } };
+                        inputs[i][0][(i - 1) / 3][(i - 1) % 3] = 1;
+                        tOuts[i] = new float[1][][];
+                        tOuts[i][0] = new float[2][];
+                        for (int j = 0; j < tOuts[i][0].Length; j++)
+                        {
+                            tOuts[i][0][j] = new float[2];
+                            for (int k = 0; k < tOuts[i][0][j].Length; k++)
+                            {
+                                tOuts[i][0][j][k] = (k <= ((i - 1) % 3) && ((i - 1) % 3) <= (k + 1) && j * 3 <= (i - 1) && (i - 1) < (j * 3 + 6)) ? 1f : 0f;
+                            }
+                        }
                     }
-                }
-            }
-            while (true)
-            {
-                float error = convNet.StochasticGradientDescent(inputs, tOuts, 0.01f);
-                if (error < bestError)
-                {
-                    bestError = error;
-                    Console.Clear();
-                    Console.Write("Error: " + error);
-                }
+                    while (true)
+                    {
+                        float error = convNet.StochasticGradientDescent(inputs, tOuts, 0.01f);
+                        if (error < bestError)
+                        {
+                            bestError = error;
+                            Console.Clear();
+                            Console.Write("Error: " + error);
+                        }
+                    }
+                    break;
+                case 0:
+                    string[] files = Directory.GetFiles(@"C:\Users\Peter.Husman\Pictures\imgs");
+                    bestError = float.PositiveInfinity;
+                    inputs = new float[files.Length][][][];
+                    tOuts = new float[files.Length][][][];
+                    int wid = 0;
+                    for(int i = 0; i < files.Length; i++)
+                    {
+                        inputs[i] = new float[1][][];
+                        tOuts[i] = new[] { new[] { new[] { files[i].EndsWith("halfmat.jpg") ? 0f : 1f } } };
+                        Bitmap bm = new Bitmap(files[i]);
+                        wid = bm.Width;
+                        for(int j = 0; j < inputs[i].Length; j++)
+                        {
+                            inputs[i][j] = new float[bm.Width][];
+                            for(int k = 0; k < bm.Width; k++)
+                            {
+                                inputs[i][j][k] = new float[bm.Height];
+                                for(int l = 0; l < bm.Height; l++)
+                                {
+                                    var pixel = bm.GetPixel(k, l);
+                                    inputs[i][j][k][l] = j == 0 ? pixel.R : (j == 1 ? pixel.G : pixel.B);
+                                }
+                            }
+                        }
+                    }
+                    var lyr = new ConvolutionalLayer(wid, 10, 1, 3, 1, 1, false);
+                    var lyr2 = new ConvolutionalLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1, 1, false);
+                    convNet = new ConvolutionalNeuralNetwork(lyr, /*lyr2,*/ new PoolingLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
+                    convNet.Randomize(new Random());
+                    while (true)
+                    {
+                        float error = convNet.StochasticGradientDescent(inputs, tOuts, 0.005f);
+                        if (error < bestError)
+                        {
+                            bestError = error;
+                            Console.Clear();
+                            Console.Write("Error: " + error);
+                        }
+                    }
+                    break;
+                case 2:
+                    break;
             }
         }
 
@@ -596,7 +649,7 @@ namespace NeuralNets
                         {
                             if (state.IsXTurn)
                             {
-                                int move = (int)population[0].net.Compute(state.Board.SelectMany(a => a.Select(b => (double)b)).ToArray())[0];
+                                int move = (int)population[0].net.Compute(state.Board.SelectMany(abc => abc.Select(bcd => (double)bcd)).ToArray())[0];
                                 if (move < 0 || move > 8)
                                 {
                                     break;
@@ -661,7 +714,7 @@ namespace NeuralNets
                         while (true)
                         {
                             TicTacToeGameState state = (TicTacToeGameState)currNode.CurrentState;
-                            int move = (int)population[i].net.Compute(state.Board.SelectMany(a => a.Select(b => (double)b)).ToArray())[0];
+                            int move = (int)population[i].net.Compute(state.Board.SelectMany(abc => abc.Select(bcd => (double)bcd)).ToArray())[0];
                             if (move < 0 || move > 8)
                             {
                                 roundScore -= 5;
