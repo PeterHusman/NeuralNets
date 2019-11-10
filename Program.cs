@@ -116,7 +116,7 @@ namespace NeuralNets
             float bestError;
             float[][][][] inputs;
             float[][][][] tOuts;
-            switch (CHelper.SelectorMenu("Pick problem to solve", new[] { "Identify soul on field", "Random test", "" }, true, ConsoleColor.Yellow, ConsoleColor.Gray, ConsoleColor.Magenta))
+            switch (CHelper.SelectorMenu("Pick problem to solve", new[] { "Identify soul on field", "Random test", "Medium Test" }, true, ConsoleColor.Yellow, ConsoleColor.Gray, ConsoleColor.Magenta))
             {
                 case 1:
                     convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 2, 0, 1, 1, 1, false), new PoolingLayer(2, 1, 0, 1, 1)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
@@ -158,19 +158,19 @@ namespace NeuralNets
                     inputs = new float[files.Length][][][];
                     tOuts = new float[files.Length][][][];
                     int wid = 0;
-                    for(int i = 0; i < files.Length; i++)
+                    for (int i = 0; i < files.Length; i++)
                     {
                         inputs[i] = new float[1][][];
                         tOuts[i] = new[] { new[] { new[] { files[i].EndsWith("halfmat.jpg") ? 0f : 1f } } };
                         Bitmap bm = new Bitmap(files[i]);
                         wid = bm.Width;
-                        for(int j = 0; j < inputs[i].Length; j++)
+                        for (int j = 0; j < inputs[i].Length; j++)
                         {
                             inputs[i][j] = new float[bm.Width][];
-                            for(int k = 0; k < bm.Width; k++)
+                            for (int k = 0; k < bm.Width; k++)
                             {
                                 inputs[i][j][k] = new float[bm.Height];
-                                for(int l = 0; l < bm.Height; l++)
+                                for (int l = 0; l < bm.Height; l++)
                                 {
                                     var pixel = bm.GetPixel(k, l);
                                     inputs[i][j][k][l] = j == 0 ? pixel.R : (j == 1 ? pixel.G : pixel.B);
@@ -178,13 +178,13 @@ namespace NeuralNets
                             }
                         }
                     }
-                    var lyr = new ConvolutionalLayer(wid, 10, 1, 3, 1, 1, false);
+                    var lyr = new ConvolutionalLayer(wid, 10, 0, 1, 1, 1, false);
                     var lyr2 = new ConvolutionalLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1, 1, false);
                     convNet = new ConvolutionalNeuralNetwork(lyr, /*lyr2,*/ new PoolingLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
                     convNet.Randomize(new Random());
                     while (true)
                     {
-                        float error = convNet.StochasticGradientDescent(inputs, tOuts, 0.005f);
+                        float error = convNet.GradientDescent(inputs, tOuts, 0.005f);
                         if (error < bestError)
                         {
                             bestError = error;
@@ -194,6 +194,175 @@ namespace NeuralNets
                     }
                     break;
                 case 2:
+                    convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 3, 0, 1, 1, 1, true)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
+                    convNet.Randomize(new Random());
+                    bestError = float.PositiveInfinity;
+                    inputs = new[] {
+                        new [] {new[] {
+                            new [] { 0f, 0f, 0f },
+                            new [] { 0f, 0f, 0f },
+                            new [] { 0f, 0f, 0f } } },
+                        new [] { new [] {
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 0f, 1f },
+                            new [] { 1f, 1f, 1f } } },
+                        new [] { new [] {
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 1f, 1f } } },
+                        new [] { new [] {
+                            new [] { 0f, 0f, 0f },
+                            new [] { 0f, 1f, 0f },
+                            new [] { 0f, 0f, 0f } } },
+                        new [] { new [] {
+                            new [] { 0f, 0f, 0f },
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 1f, 1f } } },
+                        new [] { new [] {
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 1f, 1f },
+                            new [] { 0f, 0f, 0f } } },
+                        new [] { new [] {
+                            new [] { 0f, 0f, 0f },
+                            new [] { 1f, 1f, 1f },
+                            new [] { 0f, 0f, 0f } } },
+                        new [] { new [] {
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 0f, 1f },
+                            new [] { 1f, 1f, 1f } } },
+                        new [] { new [] {
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 0f, 1f },
+                            new [] { 1f, 1f, 1f } } },
+                        new [] { new [] {
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 0f, 1f },
+                            new [] { 1f, 1f, 1f } } },
+                        new [] { new [] {
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 0f, 1f },
+                            new [] { 1f, 1f, 1f } } },
+                        new [] { new [] {
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 0f, 1f },
+                            new [] { 1f, 1f, 1f } } },
+                        new [] { new [] {
+                            new [] { 1f, 1f, 1f },
+                            new [] { 1f, 0f, 1f },
+                            new [] { 1f, 1f, 1f } } } };
+                    tOuts = new[] {
+                            new[] {
+                                new [] {
+                                    new[] {
+                                        0f
+                                    }
+                                }
+                        },
+                        new [] {
+                            new [] {
+                                new [] {
+                                    1f
+                                }
+                            }
+                        }, new [] {
+                            new [] {
+                                new [] {
+                                    0f
+                                }
+                            }
+                        }, new [] {
+                            new [] {
+                                new [] {
+                                    0f
+                                }
+                            }
+                        }, new [] {
+                            new [] {
+                                new [] {
+                                    0f
+                                }
+                            }
+                        }, new [] {
+                            new [] {
+                                new [] {
+                                    0f
+                                }
+                            }
+                        }, new [] {
+                            new [] {
+                                new [] {
+                                    0f
+                                }
+                            }
+                        },
+                        new [] {
+                            new [] {
+                                new [] {
+                                    1f
+                                }
+                            }
+                        },
+                        new [] {
+                            new [] {
+                                new [] {
+                                    1f
+                                }
+                            }
+                        },
+                        new [] {
+                            new [] {
+                                new [] {
+                                    1f
+                                }
+                            }
+                        },
+                        new [] {
+                            new [] {
+                                new [] {
+                                    1f
+                                }
+                            }
+                        },
+                        new [] {
+                            new [] {
+                                new [] {
+                                    1f
+                                }
+                            }
+                        },
+                        new [] {
+                            new [] {
+                                new [] {
+                                    1f
+                                }
+                            }
+                        }
+                    };
+                    /*for (int i = 1; i < 10; i++)
+                    {
+                        inputs[i] = new[] { new[] { new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f } } };
+                        inputs[i][0][(i - 1) / 3][(i - 1) % 3] = 1;
+                        tOuts[i] = new float[1][][];
+                        tOuts[i][0] = new float[2][];
+                        for (int j = 0; j < tOuts[i][0].Length; j++)
+                        {
+                            tOuts[i][0][j] = new float[2];
+                            for (int k = 0; k < tOuts[i][0][j].Length; k++)
+                            {
+                                tOuts[i][0][j][k] = (k <= ((i - 1) % 3) && ((i - 1) % 3) <= (k + 1) && j * 3 <= (i - 1) && (i - 1) < (j * 3 + 6)) ? 1f : 0f;
+                            }
+                        }
+                    }*/
+                    while (true)
+                    {
+                        float error = convNet.StochasticGradientDescent(inputs, tOuts, 0.01f);
+                        if (error < bestError)
+                        {
+                            bestError = error;
+                            Console.Clear();
+                            Console.Write("Error: " + error);
+                        }
+                    }
                     break;
             }
         }
@@ -539,7 +708,7 @@ namespace NeuralNets
                         }
                     }
 
-                    if (Console.KeyAvailable)
+                    if (Console.KeyAvailable && false)
                     {
                         var key = Console.ReadKey(true);
                         if (key.Key == ConsoleKey.PageUp)
