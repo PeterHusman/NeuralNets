@@ -119,7 +119,7 @@ namespace NeuralNets
             switch (CHelper.SelectorMenu("Pick problem to solve", new[] { "Identify soul on field", "Random test", "Medium Test" }, true, ConsoleColor.Yellow, ConsoleColor.Gray, ConsoleColor.Magenta))
             {
                 case 1:
-                    convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 2, 0, 1, 1, 1, false), new PoolingLayer(2, 1, 0, 1, 1)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
+                    convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 2, 0, 1, 1, 1, ActivationFunctions.Identity), new PoolingLayer(2, 1, 0, 1, 1)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
                     convNet.Randomize(new Random());
                     bestError = float.PositiveInfinity;
                     inputs = new float[10][][][];
@@ -178,8 +178,8 @@ namespace NeuralNets
                             }
                         }
                     }
-                    var lyr = new ConvolutionalLayer(wid, 10, 0, 1, 1, 1, false);
-                    var lyr2 = new ConvolutionalLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1, 1, false);
+                    var lyr = new ConvolutionalLayer(wid, 10, 0, 1, 1, 1, ActivationFunctions.Identity);
+                    var lyr2 = new ConvolutionalLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1, 1, ActivationFunctions.Identity);
                     convNet = new ConvolutionalNeuralNetwork(lyr, /*lyr2,*/ new PoolingLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
                     convNet.Randomize(new Random());
                     while (true)
@@ -194,7 +194,7 @@ namespace NeuralNets
                     }
                     break;
                 case 2:
-                    convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 3, 0, 1, 1, 1, true)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
+                    convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 3, 0, 1, 1, 1, ActivationFunctions.ReLU)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
                     convNet.Randomize(new Random());
                     bestError = float.PositiveInfinity;
                     inputs = new[] {

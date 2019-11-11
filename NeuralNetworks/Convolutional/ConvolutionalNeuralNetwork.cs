@@ -92,7 +92,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                     }
                 }
 
-                for (int i = Layers.Length - 1; i >= 0; i--)
+                for (int i = Layers.Length - 2; i >= 0; i--)
                 {
                     errors = Layers[i].BackPropagation(errors);
                 }
