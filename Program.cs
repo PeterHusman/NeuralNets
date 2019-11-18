@@ -116,9 +116,12 @@ namespace NeuralNets
             float bestError;
             float[][][][] inputs;
             float[][][][] tOuts;
-            switch (CHelper.SelectorMenu("Pick problem to solve", new[] { "Identify soul on field", "Random test", "Medium Test" }, true, ConsoleColor.Yellow, ConsoleColor.Gray, ConsoleColor.Magenta))
+            switch (CHelper.SelectorMenu("Pick problem to solve", new[] { "MNIST", "Identify soul on field", "Random test", "Medium Test" }, true, ConsoleColor.Yellow, ConsoleColor.Gray, ConsoleColor.Magenta))
             {
-                case 1:
+                case 0:
+                    throw new NotImplementedException("NMIST handwritten letters");
+                    break;
+                case 2:
                     convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 2, 0, 1, 1, 1, ActivationFunctions.Identity), new PoolingLayer(2, 1, 0, 1, 1)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
                     convNet.Randomize(new Random());
                     bestError = float.PositiveInfinity;
@@ -152,7 +155,7 @@ namespace NeuralNets
                         }
                     }
                     break;
-                case 0:
+                case 1:
                     string[] files = Directory.GetFiles(@"C:\Users\Peter.Husman\Pictures\imgs");
                     bestError = float.PositiveInfinity;
                     inputs = new float[files.Length][][][];
@@ -180,20 +183,22 @@ namespace NeuralNets
                     }
                     var lyr = new ConvolutionalLayer(wid, 10, 0, 1, 1, 1, ActivationFunctions.Identity);
                     var lyr2 = new ConvolutionalLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1, 1, ActivationFunctions.Identity);
-                    convNet = new ConvolutionalNeuralNetwork(lyr, /*lyr2,*/ new PoolingLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
+                    convNet = new ConvolutionalNeuralNetwork(lyr, /*lyr2,*/ new PoolingLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1), new ConvolutionalLayer(1, 1, 0, 1, 1, 1, ActivationFunctions.Identity)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
                     convNet.Randomize(new Random());
+                    Console.Clear();
                     while (true)
                     {
-                        float error = convNet.GradientDescent(inputs, tOuts, 0.005f);
-                        if (error < bestError)
-                        {
+                        float error = convNet.GradientDescent(inputs, tOuts, 0.00005e-9f); 
+                        //if (error < bestError)
+                        //{
                             bestError = error;
-                            Console.Clear();
-                            Console.Write("Error: " + error);
-                        }
+                            //Console.Clear();
+                            Console.WriteLine("Error: " + error);
+                        //}
+
                     }
                     break;
-                case 2:
+                case 3:
                     convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 3, 0, 1, 1, 1, ActivationFunctions.ReLU)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
                     convNet.Randomize(new Random());
                     bestError = float.PositiveInfinity;

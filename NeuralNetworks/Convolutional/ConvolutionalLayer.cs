@@ -34,6 +34,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
 
         public float[][][] Compute(float[][][] input)
         {
+            ReallyLastIns = new float[ExpectedInputDepth][][];
             LastIns = new float[Depth][][];
             //i is layer in output
             LastOuts = new float[Depth][][];
@@ -52,6 +53,18 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                         //j is depth in input
                         for (int j = 0; j < ExpectedInputDepth; j++)
                         {
+                            if(ReallyLastIns[j] == null)
+                            {
+                                ReallyLastIns[j] = new float[ExpectedInputWidth][];
+                                for(int abc = 0; abc < ExpectedInputWidth; abc++)
+                                {
+                                    ReallyLastIns[j][abc] = new float[ExpectedInputWidth];
+                                    for(int cba = 0; cba < ExpectedInputWidth; cba++)
+                                    {
+                                        ReallyLastIns[j][abc][cba] = input[j][abc][cba];
+                                    }
+                                }
+                            }
                             //k is part of position in filter
                             for (int k = 0; k < FilterSideLength; k++)
                             {
@@ -101,13 +114,14 @@ namespace NeuralNets.NeuralNetworks.Convolutional
         public float[][][] PartialDerivative { get; set; }
         public float[][][][] DErrorDWeight { get; set; }
         public float[] BiasChanges { get; set; }
+        public float[][][] ReallyLastIns { get; set; }
 
         public void ClearUpdates()
         {
             PartialDerivative = new float[Depth][][];
             DErrorDWeight = new float[Depth][][][];
             BiasChanges = new float[Depth];
-            for (int i = 0; i < ExpectedInputDepth; i++)
+            for (int i = 0; i < Depth; i++)
             {
                 PartialDerivative[i] = new float[OutputSideLength][];
                 for (int j = 0; j < OutputSideLength; j++)
@@ -130,6 +144,53 @@ namespace NeuralNets.NeuralNetworks.Convolutional
 
         }
 
+        public float[][][] BackPropagation(float[][][] derivatives, ICNNLayer nextLayer)
+        {
+            ConvolutionalLayer conv = nextLayer as ConvolutionalLayer;
+            //i is depth in output
+            for (int i = 0; i < nextLayer.Depth; i++)
+            {
+                //y is part of position in output
+                for (int y = 0; y < nextLayer.OutputSideLength; y++)
+                {
+                    //x is part of position in output
+                    for (int x = 0; x < nextLayer.OutputSideLength; x++)
+                    {
+                        //j is depth in input
+                        for (int j = 0; j < nextLayer.ExpectedInputDepth; j++)
+                        {
+                            //k is part of position in filter
+                            for (int k = 0; k < nextLayer.FilterSideLength; k++)
+                            {
+                                int absY = y * nextLayer.StrideLength + k;
+                                if (absY < nextLayer.ZeroPaddingSize || absY >= nextLayer.ExpectedInputWidth + nextLayer.ZeroPaddingSize)
+                                {
+                                    continue;
+                                }
+                                //l is part of position in filter
+                                for (int l = 0; l < nextLayer.FilterSideLength; l++)
+                                {
+                                    int absX = x * nextLayer.StrideLength + l;
+                                    if (absX < nextLayer.ZeroPaddingSize || absX >= nextLayer.ExpectedInputWidth + nextLayer.ZeroPaddingSize)
+                                    {
+                                        continue;
+                                    }
+
+                                    float weightThing = 1f;
+                                    if (conv != null)
+                                    {
+                                        weightThing = conv.Weights[i][j][k][l];
+                                    }
+                                    PartialDerivative[j][absY][absX] += weightThing * derivatives[j][absY][absX];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return Backprop(derivatives);
+        }
+
         public float[][][] BackPropagation(float[][][] derivatives)
         {
             //i is depth in output
@@ -141,7 +202,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                     //x is part of position in output
                     for (int x = 0; x < OutputSideLength; x++)
                     {
-                        //j is depth in input
+                        /*//j is depth in input
                         for (int j = 0; j < ExpectedInputDepth; j++)
                         {
                             //k is part of position in filter
@@ -160,15 +221,19 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                                     {
                                         continue;
                                     }
-                                    throw new NotImplementedException("COME BACK TO THIS! The weights should go the other way (weights out, not weights in -- the next layer's weights)");
-                                    PartialDerivative[j][y][absX] += /*Weights[i][j][k][l] * */derivatives[i][y][x];
-                                }
+                                    */
+                                    PartialDerivative[i][y][x] += derivatives[i][y][x];
+                                /*}
                             }
-                        }
-                        PartialDerivative[i][y][x] *= (float)ActivationFunc.Derivative(LastIns[i][y][x]);
+                        }*/
                     }
                 }
             }
+            return Backprop(derivatives);
+        }
+
+        public float[][][] Backprop(float[][][] derivatives)
+        {
             //i is depth in output
             for (int i = 0; i < Depth; i++)
             {
@@ -178,6 +243,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                     //x is part of position in output
                     for (int x = 0; x < OutputSideLength; x++)
                     {
+                        PartialDerivative[i][y][x] *= (float)ActivationFunc.Derivative(LastIns[i][y][x]);
                         BiasChanges[i] += derivatives[i][y][x];
                         //j is depth in input
                         for (int j = 0; j < ExpectedInputDepth; j++)
@@ -198,7 +264,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                                     {
                                         continue;
                                     }
-                                    DErrorDWeight[i][j][k][l] += PartialDerivative[j][absY][absX] * LastIns[j][absY][absX];
+                                    DErrorDWeight[i][j][k][l] += PartialDerivative[j][y][x] * ReallyLastIns[j][absY][absX];
                                 }
                             }
                         }

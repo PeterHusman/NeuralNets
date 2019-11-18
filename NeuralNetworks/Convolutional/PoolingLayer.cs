@@ -67,7 +67,14 @@ namespace NeuralNets.NeuralNetworks.Convolutional
             return LastOuts;
         }
 
+        public int Depth => ExpectedInputDepth;
+
         public float[][][] BackPropagation(float[][][] errors)
+        {
+            return BackPropagation(errors, null);
+        }
+
+        public float[][][] BackPropagation(float[][][] errors, ICNNLayer nextLayer)
         {
             float[][][] dErrorDInput = new float[ExpectedInputDepth][][];
             for (int i = 0; i < ExpectedInputDepth; i++)
