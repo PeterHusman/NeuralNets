@@ -18,7 +18,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
         public float[][][] Compute(float[][][] input)
         {
             float[][][] vol = input;
-            for(int i = 0; i < Layers.Length; i++)
+            for (int i = 0; i < Layers.Length; i++)
             {
                 vol = Layers[i].Compute(vol);
             }
@@ -34,7 +34,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
         {
             float[][][][] inputs = new float[trainingData.Length][][][];
             float[][][][] targetOutputs = new float[trainingData.Length][][][];
-            for(int i = 0; i < trainingData.Length; i++)
+            for (int i = 0; i < trainingData.Length; i++)
             {
                 inputs[i] = trainingData[i].input;
                 targetOutputs[i] = trainingData[i].targetOutput;
@@ -45,7 +45,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
         public float StochasticGradientDescent((float[][][] input, float[][][] targetOutput)[] trainingData, float learningRate)
         {
             float totalTotalError = 0f;
-            for(int i = 0; i < trainingData.Length; i++)
+            for (int i = 0; i < trainingData.Length; i++)
             {
                 totalTotalError += GradientDescent(learningRate, (trainingData[i].input, trainingData[i].targetOutput));
             }
@@ -62,12 +62,103 @@ namespace NeuralNets.NeuralNetworks.Convolutional
             return totalTotalError;
         }
 
-        public float GradientDescent(float[][][][] input, float[][][][] targetOut, float learningRate)
+        public static float[] SoftArgMax(float[] ins)
         {
-            
+            float[] exps = ins.Select(a => (float)Math.Exp(a)).ToArray();
+            float sum = exps.Sum();
+            return exps.Select(a => a / sum).ToArray();
+        }
+
+        public static int IndexOfMax(float[] vals)
+        {
+            int ind = 0;
+            for (int i = 0; i < vals.Length; i++)
+            {
+                if (vals[i] > vals[ind])
+                {
+                    ind = i;
+                }
+            }
+            return ind;
+        }
+
+        private static float Kronecker(float a, float b)
+        {
+            return a == b ? 1f : 0f;
+        }
+
+        public static float[] SoftMaxDeltasFromOuts(float[] distr, int index)
+        {
+            float[] derivatives = new float[distr.Length];
+            for (int i = 0; i < distr.Length; i++)
+            {
+                derivatives[i] = distr[index] * (Kronecker(i, index) - distr[i]);
+            }
+            return derivatives;
+        }
+
+        public float[] ComputeWithSoftMax(float[][][] input)
+        {
+            if (Layers.Last().OutputSideLength != 1)
+            {
+                throw new InvalidOperationException();
+            }
+            float[] output = Compute(input).Select(a => a[0][0]).ToArray();
+            return SoftArgMax(output);
+        }
+
+        public int Categorize(float[][][] input)
+        {
+            return IndexOfMax(ComputeWithSoftMax(input));
+        }
+
+        public float GradientDescentWithSoftMax(float[][][][] input, int[] targetOut, float learningRate)
+        {
+
             float totalError = 0f;
 
-            for(int i = 0; i < Layers.Length; i++)
+            for (int i = 0; i < Layers.Length; i++)
+            {
+                Layers[i].ClearUpdates();
+            }
+
+            for (int inNumber = 0; inNumber < input.Length; inNumber++)
+            {
+
+                float[] outs = ComputeWithSoftMax(input[inNumber]);
+                float[] outDeltas = SoftMaxDeltasFromOuts(outs, targetOut[inNumber]);
+                float error = 1f - outs[targetOut[inNumber]];
+                totalError += error;
+                float[][][] errors = new float[Layers[Layers.Length - 1].Depth][][];
+                for (int i = 0; i < errors.Length; i++)
+                {
+                    errors[i] = new[] { new[] { error * outDeltas[i] } };
+                }
+
+                errors = Layers[Layers.Length - 1].BackPropagation(errors);
+
+                for (int i = Layers.Length - 2; i >= 0; i--)
+                {
+                    errors = Layers[i].BackPropagation(errors, Layers[i + 1]);
+                }
+
+            }
+
+
+            for (int i = 0; i < Layers.Length; i++)
+            {
+                Layers[i].ApplyUpdates(-learningRate);
+            }
+
+            return totalError;
+        }
+
+        public float GradientDescent(float[][][][] input, float[][][][] targetOut, float learningRate)
+        {
+
+            float totalError = 0f;
+
+            for (int i = 0; i < Layers.Length; i++)
             {
                 Layers[i].ClearUpdates();
             }
@@ -102,7 +193,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
             }
 
 
-            for(int i = 0; i < Layers.Length; i++)
+            for (int i = 0; i < Layers.Length; i++)
             {
                 Layers[i].ApplyUpdates(-learningRate);
             }
@@ -112,7 +203,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
 
         public void Randomize(Random random)
         {
-            for(int i = 0; i < Layers.Length; i++)
+            for (int i = 0; i < Layers.Length; i++)
             {
                 Layers[i].Randomize(random);
             }

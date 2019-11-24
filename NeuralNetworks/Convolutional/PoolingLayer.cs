@@ -55,7 +55,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                                 {
                                     continue;
                                 }
-                                if(input[i][absY][absX] > LastOuts[i][y][x])
+                                if (input[i][absY][absX] > LastOuts[i][y][x])
                                 {
                                     LastOuts[i][y][x] = input[i][absY][absX];
                                 }
@@ -71,49 +71,61 @@ namespace NeuralNets.NeuralNetworks.Convolutional
 
         public float[][][] BackPropagation(float[][][] errors)
         {
-            return BackPropagation(errors, null);
+            throw new NotImplementedException();
         }
 
         public float[][][] BackPropagation(float[][][] errors, ICNNLayer nextLayer)
         {
-            float[][][] dErrorDInput = new float[ExpectedInputDepth][][];
-            for (int i = 0; i < ExpectedInputDepth; i++)
+            float[][][] PartialDerivative = new float[Depth][][];
+            for (int i = 0; i < Depth; i++)
             {
-                dErrorDInput[i] = new float[ExpectedInputWidth][];
-                for (int j = 0; j < ExpectedInputWidth; j++)
+                PartialDerivative[i] = new float[OutputSideLength][];
+                for (int j = 0; j < OutputSideLength; j++)
                 {
-                    dErrorDInput[i][j] = new float[ExpectedInputWidth];
+                    PartialDerivative[i][j] = new float[OutputSideLength];
                 }
             }
 
+            ConvolutionalLayer conv = nextLayer as ConvolutionalLayer;
+
             //i is layer in input and output
-            for (int i = 0; i < ExpectedInputDepth; i++)
+            for (int i = 0; i < nextLayer.Depth; i++)
             {
                 //y is part of position in output
-                for (int y = 0; y < OutputSideLength; y++)
+                for (int y = 0; y < nextLayer.OutputSideLength; y++)
                 {
                     //x is part of position in output
-                    for (int x = 0; x < OutputSideLength; x++)
+                    for (int x = 0; x < nextLayer.OutputSideLength; x++)
                     {
-                        //k is part of position in filter
-                        for (int k = 0; k < FilterSideLength; k++)
+                        for (int j = 0; j < nextLayer.ExpectedInputDepth; j++)
                         {
-                            int absY = y * StrideLength + k;
-                            if (absY < ZeroPaddingSize || absY >= ExpectedInputWidth + ZeroPaddingSize)
+                            //k is part of position in filter
+                            for (int k = 0; k < nextLayer.FilterSideLength; k++)
                             {
-                                continue;
-                            }
-                            //l is part of position in filter
-                            for (int l = 0; l < FilterSideLength; l++)
-                            {
-                                int absX = x * StrideLength + l;
-                                if (absX < ZeroPaddingSize || absX >= ExpectedInputWidth + ZeroPaddingSize)
+                                int absY = y * nextLayer.StrideLength + k;
+                                if (absY < nextLayer.ZeroPaddingSize || absY >= nextLayer.ExpectedInputWidth + nextLayer.ZeroPaddingSize)
                                 {
                                     continue;
                                 }
-                                if(LastIns[i][absY][absX] == LastOuts[i][y][x])
+                                //l is part of position in filter
+                                for (int l = 0; l < nextLayer.FilterSideLength; l++)
                                 {
-                                    dErrorDInput[i][absY][absX] += errors[i][y][x];
+                                    int absX = x * nextLayer.StrideLength + l;
+                                    if (absX < nextLayer.ZeroPaddingSize || absX >= nextLayer.ExpectedInputWidth + nextLayer.ZeroPaddingSize)
+                                    {
+                                        continue;
+                                    }
+                                    float weightThing = 1f;
+                                    if (conv != null)
+                                    {
+                                        weightThing = conv.Weights[i][j][k][l];
+                                    }
+                                    else
+                                    {
+                                        throw new NotImplementedException();
+                                    }
+                                    PartialDerivative[j][absY][absX] += weightThing * errors[j][y][x];
+
                                 }
                             }
                         }
@@ -121,7 +133,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                 }
             }
 
-            return dErrorDInput;
+            return PartialDerivative;
         }
 
         void ICNNLayer.Randomize(Random random) { }

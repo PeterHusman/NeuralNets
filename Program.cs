@@ -119,7 +119,52 @@ namespace NeuralNets
             switch (CHelper.SelectorMenu("Pick problem to solve", new[] { "MNIST", "Identify soul on field", "Random test", "Medium Test" }, true, ConsoleColor.Yellow, ConsoleColor.Gray, ConsoleColor.Magenta))
             {
                 case 0:
-                    throw new NotImplementedException("NMIST handwritten letters");
+                    FileStream imgs = File.OpenRead(@"C:\Users\Peter.Husman\Downloads\train-images-idx3-ubyte\train-images.idx3-ubyte");
+                    FileStream labels = File.OpenRead(@"C:\Users\Peter.Husman\Downloads\train-labels-idx1-ubyte\train-labels.idx1-ubyte");
+                    int n = 5;
+                    bestError = float.PositiveInfinity;
+                    inputs = new float[n][][][];
+                    int[] touts = new int[n];
+                    imgs.Position = 16;
+                    labels.Position = 8;
+                    int wid = 28;
+                    for (int i = 0; i < n; i++)
+                    {
+                        inputs[i] = new float[1][][];
+                        touts[i] = labels.ReadByte();
+                        for (int j = 0; j < inputs[i].Length; j++)
+                        {
+                            inputs[i][j] = new float[wid][];
+                            for (int k = 0; k < wid; k++)
+                            {
+                                inputs[i][j][k] = new float[wid];
+                                for (int l = 0; l < wid; l++)
+                                {
+                                    inputs[i][j][k][l] = (float)imgs.ReadByte();
+                                }
+                            }
+                        }
+                    }
+                    imgs.Close();
+                    labels.Close();
+                    var lyr = new ConvolutionalLayer(wid, 10, 0, 1, 1, 1, ActivationFunctions.Identity);
+                    var lyr2 = new ConvolutionalLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1, 1, ActivationFunctions.Identity);
+                    var lyr3 = new PoolingLayer(lyr.OutputSideLength, 5, 0, 1, 1);
+                    var lyr4 = new ConvolutionalLayer(lyr3.OutputSideLength, lyr3.OutputSideLength, 0, 1, 10, 1, ActivationFunctions.Identity);
+                    convNet = new ConvolutionalNeuralNetwork(lyr, /*lyr2,*/ lyr3, lyr4/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
+                    convNet.Randomize(new Random());
+                    Console.Clear();
+                    while (true)
+                    {
+                        float error = convNet.GradientDescentWithSoftMax(inputs, touts, 0.00005e-9f);
+                        //if (error < bestError)
+                        //{
+                        bestError = error;
+                        //Console.Clear();
+                        Console.WriteLine("Error: " + error);
+                        //}
+
+                    }
                     break;
                 case 2:
                     convNet = new ConvolutionalNeuralNetwork(new ConvolutionalLayer(3, 2, 0, 1, 1, 1, ActivationFunctions.Identity), new PoolingLayer(2, 1, 0, 1, 1)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
@@ -160,7 +205,7 @@ namespace NeuralNets
                     bestError = float.PositiveInfinity;
                     inputs = new float[files.Length][][][];
                     tOuts = new float[files.Length][][][];
-                    int wid = 0;
+                    wid = 0;
                     for (int i = 0; i < files.Length; i++)
                     {
                         inputs[i] = new float[1][][];
@@ -181,19 +226,19 @@ namespace NeuralNets
                             }
                         }
                     }
-                    var lyr = new ConvolutionalLayer(wid, 10, 0, 1, 1, 1, ActivationFunctions.Identity);
-                    var lyr2 = new ConvolutionalLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1, 1, ActivationFunctions.Identity);
+                    lyr = new ConvolutionalLayer(wid, 10, 0, 1, 1, 1, ActivationFunctions.Identity);
+                    lyr2 = new ConvolutionalLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1, 1, ActivationFunctions.Identity);
                     convNet = new ConvolutionalNeuralNetwork(lyr, /*lyr2,*/ new PoolingLayer(lyr.OutputSideLength, lyr.OutputSideLength, 0, 1, 1), new ConvolutionalLayer(1, 1, 0, 1, 1, 1, ActivationFunctions.Identity)/*, new PoolingLayer(2, 2, 0, 1, 1)*/);
                     convNet.Randomize(new Random());
                     Console.Clear();
                     while (true)
                     {
-                        float error = convNet.GradientDescent(inputs, tOuts, 0.00005e-9f); 
+                        float error = convNet.GradientDescent(inputs, tOuts, 0.00005e-9f);
                         //if (error < bestError)
                         //{
-                            bestError = error;
-                            //Console.Clear();
-                            Console.WriteLine("Error: " + error);
+                        bestError = error;
+                        //Console.Clear();
+                        Console.WriteLine("Error: " + error);
                         //}
 
                     }

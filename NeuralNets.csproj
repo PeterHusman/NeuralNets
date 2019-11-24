@@ -72,6 +72,7 @@
   <ItemGroup>
     <Compile Include="Bird.cs" />
     <Compile Include="Dinosaur.cs" />
+    <Compile Include="FileReader.cs" />
     <Compile Include="MiniMax\IGameState.cs" />
     <Compile Include="MiniMax\MiniMaxTree.cs" />
     <Compile Include="MiniMax\TicTacToeGameState.cs" />

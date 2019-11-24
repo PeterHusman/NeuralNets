@@ -20,7 +20,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
 
         public float[][][] LastOuts { get; private set; }
 
-        public float[][][] LastIns { get; private set; }
+        public float[][][] ReallyLastIns { get; private set; }
 
         public float[] Biases { get; private set; }
 
@@ -34,34 +34,34 @@ namespace NeuralNets.NeuralNetworks.Convolutional
 
         public float[][][] Compute(float[][][] input)
         {
-            ReallyLastIns = new float[ExpectedInputDepth][][];
-            LastIns = new float[Depth][][];
+            LastIns = new float[ExpectedInputDepth][][];
+            ReallyLastIns = new float[Depth][][];
             //i is layer in output
             LastOuts = new float[Depth][][];
             for (int i = 0; i < Depth; i++)
             {
                 //y is part of position in output
                 LastOuts[i] = new float[OutputSideLength][];
-                LastIns[i] = new float[OutputSideLength][];
+                ReallyLastIns[i] = new float[OutputSideLength][];
                 for (int y = 0; y < OutputSideLength; y++)
                 {
                     //x is part of position in output
                     LastOuts[i][y] = new float[OutputSideLength];
-                    LastIns[i][y] = new float[OutputSideLength];
+                    ReallyLastIns[i][y] = new float[OutputSideLength];
                     for (int x = 0; x < OutputSideLength; x++)
                     {
                         //j is depth in input
                         for (int j = 0; j < ExpectedInputDepth; j++)
                         {
-                            if(ReallyLastIns[j] == null)
+                            if (LastIns[j] == null)
                             {
-                                ReallyLastIns[j] = new float[ExpectedInputWidth][];
-                                for(int abc = 0; abc < ExpectedInputWidth; abc++)
+                                LastIns[j] = new float[ExpectedInputWidth][];
+                                for (int abc = 0; abc < ExpectedInputWidth; abc++)
                                 {
-                                    ReallyLastIns[j][abc] = new float[ExpectedInputWidth];
-                                    for(int cba = 0; cba < ExpectedInputWidth; cba++)
+                                    LastIns[j][abc] = new float[ExpectedInputWidth];
+                                    for (int cba = 0; cba < ExpectedInputWidth; cba++)
                                     {
-                                        ReallyLastIns[j][abc][cba] = input[j][abc][cba];
+                                        LastIns[j][abc][cba] = input[j][abc][cba];
                                     }
                                 }
                             }
@@ -81,12 +81,12 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                                     {
                                         continue;
                                     }
-                                    LastIns[i][y][x] += input[j][absY][absX] * Weights[i][j][k][l];
+                                    ReallyLastIns[i][y][x] += input[j][absY][absX] * Weights[i][j][k][l];
                                 }
                             }
                         }
-                        LastIns[i][y][x] += Biases[i];
-                        LastOuts[i][y][x] = (float)ActivationFunc.Function(LastIns[i][y][x]);
+                        ReallyLastIns[i][y][x] += Biases[i];
+                        LastOuts[i][y][x] = (float)ActivationFunc.Function(ReallyLastIns[i][y][x]);
                     }
                 }
             }
@@ -114,7 +114,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
         public float[][][] PartialDerivative { get; set; }
         public float[][][][] DErrorDWeight { get; set; }
         public float[] BiasChanges { get; set; }
-        public float[][][] ReallyLastIns { get; set; }
+        public float[][][] LastIns { get; set; }
 
         public void ClearUpdates()
         {
@@ -177,11 +177,15 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                                     }
 
                                     float weightThing = 1f;
-                                    if (conv != null)
+                                    if (conv == null)
+                                    {
+                                        weightThing = nextLayer.LastIns[j][absY][absX] == nextLayer.LastOuts[i][y][x] ? 1 : 0;
+                                    }
+                                    else
                                     {
                                         weightThing = conv.Weights[i][j][k][l];
                                     }
-                                    PartialDerivative[j][absY][absX] += weightThing * derivatives[j][absY][absX];
+                                    PartialDerivative[j][absY][absX] += weightThing * derivatives[j][y][x];
                                 }
                             }
                         }
@@ -222,10 +226,10 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                                         continue;
                                     }
                                     */
-                                    PartialDerivative[i][y][x] += derivatives[i][y][x];
-                                /*}
-                            }
-                        }*/
+                        PartialDerivative[i][y][x] += derivatives[i][y][x];
+                        /*}
+                    }
+                }*/
                     }
                 }
             }
@@ -243,8 +247,8 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                     //x is part of position in output
                     for (int x = 0; x < OutputSideLength; x++)
                     {
-                        PartialDerivative[i][y][x] *= (float)ActivationFunc.Derivative(LastIns[i][y][x]);
-                        BiasChanges[i] += derivatives[i][y][x];
+                        PartialDerivative[i][y][x] *= (float)ActivationFunc.Derivative(ReallyLastIns[i][y][x]);
+                        BiasChanges[i] += PartialDerivative[i][y][x];
                         //j is depth in input
                         for (int j = 0; j < ExpectedInputDepth; j++)
                         {
@@ -264,7 +268,7 @@ namespace NeuralNets.NeuralNetworks.Convolutional
                                     {
                                         continue;
                                     }
-                                    DErrorDWeight[i][j][k][l] += PartialDerivative[j][y][x] * ReallyLastIns[j][absY][absX];
+                                    DErrorDWeight[i][j][k][l] += PartialDerivative[j][y][x] * LastIns[j][absY][absX];
                                 }
                             }
                         }
